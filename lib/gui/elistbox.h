@@ -221,7 +221,6 @@ private:
 	int m_selectionwidth;
 	int m_columns;
 	int m_rows;
-	int m_flex_mode;
 	int m_items_per_page;
 	int m_selection_enabled;
 	int xoffset;
