@@ -13,6 +13,9 @@ public:
 
 	void setList(SWIG_PYOBJECT(ePyObject) list);
 	void setItemHeight(int height);
+	void setItemWidth(int width);
+	void setSelectionHeight(int height);
+	void setSelectionWidth(int width);
 	PyObject *getCurrentSelection();
 	int getCurrentSelectionIndex() { return m_cursor; }
 	void invalidateEntry(int index);
@@ -41,6 +44,9 @@ protected:
 	virtual void paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected);
 
 	int getItemHeight() { return m_itemheight; }
+	int getItemWidth() { return m_itemwidth; }
+	int getSelectionHeight() { return m_selectionheight; }
+	int getSelectionWidth() { return m_selectionwidth; }
 
 protected:
 	ePyObject m_list;
@@ -48,6 +54,9 @@ protected:
 	eSize m_itemsize;
 	ePtr<gFont> m_font;
 	int m_itemheight;
+	int m_itemwidth;
+	int m_selectionheight;
+	int m_selectionwidth;
 #endif
 };
 
@@ -74,12 +83,18 @@ public:
 	~eListboxPythonMultiContent();
 	enum { TYPE_TEXT, TYPE_PROGRESS, TYPE_PIXMAP, TYPE_PIXMAP_ALPHATEST, TYPE_PIXMAP_ALPHABLEND, TYPE_PROGRESS_PIXMAP };
 	void paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected);
+	void refresh();
 	int currentCursorSelectable();
 	void setList(SWIG_PYOBJECT(ePyObject) list);
 	void setFont(int fnt, gFont *font);
 	void setBuildFunc(SWIG_PYOBJECT(ePyObject) func);
 	void setSelectableFunc(SWIG_PYOBJECT(ePyObject) func);
 	void setItemHeight(int height);
+	void setItemWidth(int width);
+	void setSelectionHeight(int height);
+	void setSelectionWidth(int width);
+	void setFlexMode(int mode);
+	void setMargin(const ePoint &margin);
 	void setSelectionClip(eRect &rect, bool update=false);
 	void updateClip(gRegion &);
 	void resetClip();
