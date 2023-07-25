@@ -203,31 +203,30 @@ protected:
 
 private:
 	int m_scrollbar_mode, m_prev_scrollbar_page;
-	int m_scrollbar_width;
 	bool m_content_changed;  
 	bool m_enabled_wrap_around;
-	bool m_selectionheight_set;
-	bool m_selectionwidth_set;
 	bool m_itemheight_set;
 	bool m_itemwidth_set;
+	bool m_selectionheight_set;
+	bool m_selectionwidth_set;
 	bool m_columns_set;
 	bool m_rows_set;
-	bool m_native_keys_bound;
-
-	int m_columns;
-	int m_rows;
-	int xoffset;
-	int yoffset;
+	
+	int m_scrollbar_width;
 	int m_top, m_selected;
 	int m_flex_mode;
 	int m_itemheight;
 	int m_itemwidth;
 	int m_selectionheight;
 	int m_selectionwidth;
+	int m_columns;
+	int m_rows;
+	int m_flex_mode;
 	int m_items_per_page;
 	int m_selection_enabled;
-	
-
+	int xoffset;
+	int yoffset;
+	bool m_native_keys_bound;
 	
 
 	ePoint m_margin;
