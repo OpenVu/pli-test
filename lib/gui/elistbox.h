@@ -101,6 +101,11 @@ public:
 
 	PSignal0<void> selectionChanged;
 
+	enum {
+		byPage,
+		byLine
+	};
+
 	enum
 	{
 		flexVertical,
@@ -143,7 +148,10 @@ public:
 		moveEnd,
 		pageUp,
 		pageDown,
-		justCheck
+		prevPage,
+		nextPage,
+		justCheck,
+		refresh
 	};
 
 	void setFlexMode(int mode);
@@ -176,6 +184,7 @@ public:
 	void setVAlign(int align);
 	void setHAlign(int align);
 	void setTextOffset(const ePoint &textoffset);
+	void setCenterList(bool center);
 
 	void setSliderBorderColor(const gRGB &col);
 	void setSliderBorderWidth(int size);
@@ -226,6 +235,9 @@ private:
 	int xoffset;
 	int yoffset;
 	bool m_native_keys_bound;
+	bool m_center_list;
+	int m_first_selectable_item;
+	int m_last_selectable_item;
 	
 
 	ePoint m_margin;
