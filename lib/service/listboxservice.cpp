@@ -1185,3 +1185,31 @@ void eListboxServiceContent::paint(gPainter &painter, eWindowStyle &style, const
 	}
 	painter.clippop();
 }
+
+void eListboxServiceContent::setItemHeight(int height)
+{
+	m_itemheight = height;
+	if (m_listbox)
+		m_listbox->setItemHeight(height);
+}
+
+void eListboxServiceContent::setItemWidth(int width)
+{
+	m_itemwidth = width;
+	if (m_listbox)
+		m_listbox->setItemWidth(width);
+}
+
+void eListboxServiceContent::setSelectionHeight(int height)
+{
+	m_selectionheight = height;
+	if (m_listbox)
+		m_listbox->setSelectionHeight(height);
+}
+
+void eListboxServiceContent::setSelectionWidth(int width)
+{
+	m_selectionwidth = width;
+	if (m_listbox)
+		m_listbox->setSelectionWidth(width);
+}
