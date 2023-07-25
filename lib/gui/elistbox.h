@@ -67,7 +67,7 @@ struct eListboxStyle
 	gRGB m_background_color, m_background_color_selected,
 	m_foreground_color, m_foreground_color_selected, m_border_color, m_sliderborder_color, m_sliderforeground_color;
 	int m_background_color_set, m_foreground_color_set, m_background_color_selected_set, m_foreground_color_selected_set, m_sliderforeground_color_set, m_sliderborder_color_set, m_scrollbarsliderborder_size_set;
-	int m_shadow_set,	
+	int m_shadow_set;	
 		/*
 			{m_transparent_background m_background_color_set m_background}
 			{0 0 0} use global background color
