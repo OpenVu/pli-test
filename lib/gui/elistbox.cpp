@@ -457,7 +457,7 @@ void eListbox::moveSelection(long dir)
 				m_content->cursorSet(prevsel + pageind); // prepare for next page down
 			}while (newsel == prevsel + m_items_per_page);
 			break;
-	}
+		}
 	}
 
 	/* now, look wether the current selection is out of screen */
