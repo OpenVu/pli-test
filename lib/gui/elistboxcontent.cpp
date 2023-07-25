@@ -1251,6 +1251,39 @@ void eListboxPythonMultiContent::setItemHeight(int height)
 		m_listbox->setItemHeight(height);
 }
 
+void eListboxPythonMultiContent::setItemWidth(int width)
+{
+	m_itemwidth = width;
+	if (m_listbox)
+		m_listbox->setItemWidth(width);
+}
+
+void eListboxPythonMultiContent::setSelectionHeight(int height)
+{
+	m_selectionheight = height;
+	if (m_listbox)
+		m_listbox->setSelectionHeight(height);
+}
+
+void eListboxPythonMultiContent::setSelectionWidth(int width)
+{
+	m_selectionwidth = width;
+	if (m_listbox)
+		m_listbox->setSelectionWidth(width);
+}
+
+void eListboxPythonMultiContent::setFlexMode(int mode)
+{
+	if (m_listbox)
+		m_listbox->setFlexMode(mode);
+}
+
+void eListboxPythonMultiContent::setMargin(const ePoint &margin)
+{
+	if (m_listbox)
+		m_listbox->setMargin(margin);
+}
+
 void eListboxPythonMultiContent::setList(ePyObject list)
 {
 	m_old_clip = m_clip = gRegion::invalidRegion();
