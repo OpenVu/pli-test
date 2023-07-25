@@ -567,7 +567,7 @@ void eListbox::moveSelection(long dir)
 	m_top = m_selected - (m_selected % m_items_per_page);
 
 	/*  new scollmode by line if not on the first page */
-	if(m_scroll_mode == byLine && m_content->size() > m_items_per_page && m_flex_mode != flexGrid)
+	if(m_scrollbar_mode == byLine && m_content->size() > m_items_per_page && m_flex_mode != flexGrid)
 	{
 
 		int oldline = m_content->cursorRestoreLine();
