@@ -203,15 +203,6 @@ protected:
 
 private:
 	int m_scrollbar_mode, m_prev_scrollbar_page;
-	bool m_content_changed;
-	bool m_enabled_wrap_around;
-	bool m_itemheight_set;
-	bool m_itemwidth_set;
-	bool m_selectionheight_set;
-	bool m_selectionwidth_set;
-	bool m_columns_set;
-	bool m_rows_set;
-
 	int m_scrollbar_width;
 	int m_top, m_selected;
 	int m_flex_mode;
@@ -226,6 +217,14 @@ private:
 	int xoffset;
 	int yoffset;
 
+	bool m_content_changed;  
+	bool m_enabled_wrap_around;
+	bool m_itemheight_set;
+	bool m_itemwidth_set;
+	bool m_selectionheight_set;
+	bool m_selectionwidth_set;
+	bool m_columns_set;
+	bool m_rows_set;
 	bool m_native_keys_bound;
 
 	ePoint m_margin;
