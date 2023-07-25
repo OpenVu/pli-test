@@ -1179,6 +1179,12 @@ error_out:
 	painter.clippop();
 }
 
+void eListboxPythonMultiContent::refresh()
+{
+	if (m_listbox)
+		m_listbox->moveSelection(m_listbox->refresh);
+}
+
 void eListboxPythonMultiContent::setBuildFunc(ePyObject cb)
 {
 	Py_XDECREF(m_buildFunc);
