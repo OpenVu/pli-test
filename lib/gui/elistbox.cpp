@@ -7,9 +7,10 @@
 
 eListbox::eListbox(eWidget *parent) :
 	eWidget(parent), m_scrollbar_mode(showNever), m_prev_scrollbar_page(-1),
-	m_content_changed(false), m_enabled_wrap_around(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20),
-	m_top(0), m_selected(0),
-	m_items_per_page(0), m_selection_enabled(1), m_native_keys_bound(false), m_flex_mode(flexVertical), m_itemheight(25), m_itemwidth(20), m_columns(2), m_rows(2), m_selectionheight(20), m_selectionwidth(20) xoffset(0), yoffset(0), m_scrollbar(nullptr)
+	m_content_changed(false), m_enabled_wrap_around(false), m_itemheight_set(false),
+	m_itemwidth_set(false), m_selectionheight_set(false), m_selectionwidth_set(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20),
+	m_top(0), m_selected(0), m_flex_mode(flexVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
+	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_scrollbar(nullptr)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
