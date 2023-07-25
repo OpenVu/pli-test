@@ -237,9 +237,9 @@ private:
 	int xoffset;
 	int yoffset;
 	bool m_native_keys_bound;
-	bool m_center_list;
 	int m_first_selectable_item;
 	int m_last_selectable_item;
+	bool m_center_list;
 	
 
 	ePoint m_margin;
