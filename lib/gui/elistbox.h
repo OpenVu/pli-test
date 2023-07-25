@@ -214,6 +214,8 @@ private:
 	bool m_rows_set;
 	bool m_native_keys_bound;
 
+	int m_columns;
+	int m_rows;
 	int xoffset;
 	int yoffset;
 	int m_top, m_selected;
@@ -222,8 +224,6 @@ private:
 	int m_itemwidth;
 	int m_selectionheight;
 	int m_selectionwidth;
-	int m_columns;
-	int m_rows;
 	int m_items_per_page;
 	int m_selection_enabled;
 	
