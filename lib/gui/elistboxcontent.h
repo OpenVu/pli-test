@@ -33,6 +33,7 @@ protected:
 
 	void cursorSave();
 	void cursorRestore();
+	int cursorRestoreLine();
 	int size();
 
 	RESULT connectItemChanged(const sigc::slot<void()> &itemChanged, ePtr<eConnection> &connection);
