@@ -229,8 +229,7 @@ void eListbox::moveSelection(long dir)
 					}
 				}
 				prevsel = newsel;
-			}
-			while (newsel != oldsel && !m_content->currentCursorSelectable());
+			}while (newsel != oldsel && !m_content->currentCursorSelectable());
 			break;
 		}
 	}		
@@ -392,8 +391,7 @@ void eListbox::moveSelection(long dir)
 					break;
 				}
 				m_content->cursorSet(prevsel + pageind);
-			}
-			while (newsel == prevsel);
+			}while (newsel == prevsel);
 			break;
 		}	
 	}
@@ -457,10 +455,9 @@ void eListbox::moveSelection(long dir)
 				if (newsel != prevsel + m_items_per_page)
 					break;
 				m_content->cursorSet(prevsel + pageind); // prepare for next page down
-			}
-			while (newsel == prevsel + m_items_per_page);
+			}while (newsel == prevsel + m_items_per_page);
 			break;
-		}
+	}
 	}
 
 	/* now, look wether the current selection is out of screen */
