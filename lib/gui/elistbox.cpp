@@ -131,13 +131,17 @@ void eListbox::moveSelection(long dir)
 	if (!m_content)
 		return;
 	/* if our list does not have one entry, don't do anything. */
-	if (!m_items_per_page)
+	if (!m_items_per_page || !m_content->size())
 		return;
 	/* we need the old top/sel to see what we have to redraw */
 	int oldtop = m_top;
 	int oldsel = m_selected;
 	int prevsel = oldsel;
 	int newsel;
+	bool indexchanged = dir > 100;
+	if(indexchanged) {
+		dir -= 100;
+	}
 
 	switch (dir)
 	{
@@ -215,7 +219,8 @@ void eListbox::moveSelection(long dir)
 			{
 				m_content->cursorMove(-1);
 				newsel = m_content->cursorGet();
-				if (newsel == prevsel) {  // cursorMove reached top and left cursor position the same. Must wrap around ?
+				if (newsel == prevsel)
+				{ // cursorMove reached top and left cursor position the same. Must wrap around ?
 					if (m_enabled_wrap_around)
 					{
 						m_content->cursorEnd();
@@ -229,10 +234,13 @@ void eListbox::moveSelection(long dir)
 					}
 				}
 				prevsel = newsel;
-			}while (newsel != oldsel && !m_content->currentCursorSelectable());
+			} while (newsel != oldsel && !m_content->currentCursorSelectable());
 			break;
 		}
-	}		
+	}
+	case refresh:
+		oldsel = ~m_selected;
+		break;
 	case moveTop:
 		m_content->cursorHome();
 		[[fallthrough]];
@@ -317,18 +325,18 @@ void eListbox::moveSelection(long dir)
 			do
 			{
 				m_content->cursorMove(1);
-				if (!m_content->cursorValid()) { //cursorMove reached end and left cursor position past the list. Must wrap around ?
+				if (!m_content->cursorValid())
+				{ // cursorMove reached end and left cursor position past the list. Must wrap around ?
 					if (m_enabled_wrap_around)
 						m_content->cursorHome();
 					else
 						m_content->cursorSet(oldsel);
 				}
 				newsel = m_content->cursorGet();
-			}
-			while (newsel != oldsel && !m_content->currentCursorSelectable());
+			} while (newsel != oldsel && !m_content->currentCursorSelectable());
 			break;
 		}
-	}		
+	}
 	case pageUp:
 	{
 		if (m_flex_mode == flexGrid || m_flex_mode == flexHorizontal)
@@ -363,7 +371,7 @@ void eListbox::moveSelection(long dir)
 				m_content->cursorMove(-m_items_per_page);
 				newsel = m_content->cursorGet();
 				pageind = newsel % m_items_per_page; // rememer were we land in thsi page (could be different on topmost page)
-				prevsel = newsel - pageind; // get top of page index
+				prevsel = newsel - pageind;			 // get top of page index
 				// find first selectable entry in new page. First check bottom part, than upper part
 				while (newsel != prevsel + m_items_per_page && m_content->cursorValid() && !m_content->currentCursorSelectable())
 				{
@@ -391,9 +399,9 @@ void eListbox::moveSelection(long dir)
 					break;
 				}
 				m_content->cursorSet(prevsel + pageind);
-			}while (newsel == prevsel);
+			} while (newsel == prevsel);
 			break;
-		}	
+		}
 	}
 	case pageDown:
 	{
@@ -433,11 +441,11 @@ void eListbox::moveSelection(long dir)
 				if (!m_content->currentCursorSelectable()) // no selectable found in top part of page
 				{
 					m_content->cursorSet(prevsel + pageind);
-					do {
+					do
+					{
 						m_content->cursorMove(1);
 						newsel = m_content->cursorGet();
-					}
-						while (newsel != prevsel + m_items_per_page && m_content->cursorValid() && !m_content->currentCursorSelectable());
+					} while (newsel != prevsel + m_items_per_page && m_content->cursorValid() && !m_content->currentCursorSelectable());
 				}
 				if (!m_content->cursorValid())
 				{
@@ -448,21 +456,204 @@ void eListbox::moveSelection(long dir)
 					{
 						m_content->cursorMove(-1);
 						newsel = m_content->cursorGet();
-					}
-					while (newsel != oldsel && !m_content->currentCursorSelectable());
+					} while (newsel != oldsel && !m_content->currentCursorSelectable());
 					break;
 				}
 				if (newsel != prevsel + m_items_per_page)
 					break;
 				m_content->cursorSet(prevsel + pageind); // prepare for next page down
-			}while (newsel == prevsel + m_items_per_page);
+			} while (newsel == prevsel + m_items_per_page);
 			break;
 		}
+	}
+	case prevPage:
+	{
+		int pageind;
+		do
+		{
+			m_content->cursorMove(-m_items_per_page);
+			newsel = m_content->cursorGet();
+			pageind = newsel % m_items_per_page; // rememer were we land in thsi page (could be different on topmost page)
+			prevsel = newsel - pageind;			 // get top of page index
+			// find first selectable entry in new page. First check bottom part, than upper part
+			while (newsel != prevsel + m_items_per_page && m_content->cursorValid() && !m_content->currentCursorSelectable())
+			{
+				m_content->cursorMove(1);
+				newsel = m_content->cursorGet();
+			}
+			if (!m_content->currentCursorSelectable()) // no selectable found in bottom part of page
+			{
+				m_content->cursorSet(prevsel + pageind);
+				while (newsel != prevsel && !m_content->currentCursorSelectable())
+				{
+					m_content->cursorMove(-1);
+					newsel = m_content->cursorGet();
+				}
+			}
+			if (m_content->currentCursorSelectable())
+				break;
+			if (newsel == 0) // at top and nothing found . Go down till something selectable or old location
+			{
+				while (newsel != oldsel && !m_content->currentCursorSelectable())
+				{
+					m_content->cursorMove(1);
+					newsel = m_content->cursorGet();
+				}
+				break;
+			}
+			m_content->cursorSet(prevsel + pageind);
+		} while (newsel == prevsel);
+		break;
+	}
+	case nextPage:
+	{
+		int pageind;
+		do
+		{
+			m_content->cursorMove(m_items_per_page);
+			if (!m_content->cursorValid())
+				m_content->cursorMove(-1);
+			newsel = m_content->cursorGet();
+			pageind = newsel % m_items_per_page;
+			prevsel = newsel - pageind; // get top of page index
+			// find a selectable entry in the new page. first look up then down from current screenlocation on the page
+			while (newsel != prevsel && !m_content->currentCursorSelectable())
+			{
+				m_content->cursorMove(-1);
+				newsel = m_content->cursorGet();
+			}
+			if (!m_content->currentCursorSelectable()) // no selectable found in top part of page
+			{
+				m_content->cursorSet(prevsel + pageind);
+				do
+				{
+					m_content->cursorMove(1);
+					newsel = m_content->cursorGet();
+				} while (newsel != prevsel + m_items_per_page && m_content->cursorValid() && !m_content->currentCursorSelectable());
+			}
+			if (!m_content->cursorValid())
+			{
+				// we reached the end of the list
+				// Back up till something selectable or we reach oldsel again
+				// E.g this should bring us back to the last selectable item on the original page
+				do
+				{
+					m_content->cursorMove(-1);
+					newsel = m_content->cursorGet();
+				} while (newsel != oldsel && !m_content->currentCursorSelectable());
+				break;
+			}
+			if (newsel != prevsel + m_items_per_page)
+				break;
+			m_content->cursorSet(prevsel + pageind); // prepare for next page down
+		} while (newsel == prevsel + m_items_per_page);
+		break;
+	}
 	}
 
 	/* now, look wether the current selection is out of screen */
 	m_selected = m_content->cursorGet();
 	m_top = m_selected - (m_selected % m_items_per_page);
+
+	/*  new scollmode by line if not on the first page */
+	if(m_scroll_mode == byLine && m_content->size() > m_items_per_page && m_flex_mode != flexGrid)
+	{
+
+		int oldline = m_content->cursorRestoreLine();
+		int max = m_content->size() - m_items_per_page;
+		// eDebug("[eListbox] moveSelection 1 dir=%d oldline=%d oldsel=%d m_selected=%d m_items_per_page=%d sz=%d max=%d", dir, oldline, oldsel, m_selected, m_items_per_page, m_content->size(), max);
+
+		bool jumpBottom = (dir == moveEnd);
+
+		// if(dir == pageDown && m_selected > max && m_flex_mode == flexVertical_list) {
+		// 	jumpBottom = true;
+		// }
+
+		if(dir == moveUp ||  dir == pageUp) {
+			if(m_selected > oldsel) {
+				jumpBottom = true;
+			}
+			else if (oldline > 0)
+				oldline-= oldsel - m_selected;
+
+			if(oldline < 0 && m_selected > m_items_per_page)
+				oldline = 0;
+
+		}
+
+		if(m_last_selectable_item == -1 && dir == justCheck)
+		{
+			m_content->cursorEnd();
+			do
+			{
+				m_content->cursorMove(-1);
+				m_last_selectable_item = m_content->cursorGet();
+			}
+			while (!m_content->currentCursorSelectable());
+			m_content->cursorSet(m_selected);
+		}
+
+		if(dir == moveDown || dir == pageDown) {
+				
+			int newline = oldline + (m_selected - oldsel);
+			if(newline < m_items_per_page && newline > 0) {
+				m_top = oldsel - oldline;
+			}
+			else{
+				m_top = m_selected - (m_items_per_page - 1);
+				if(m_selected < m_items_per_page )
+					m_top=0;
+			}
+			if (m_last_selectable_item != m_content->size() - 1 && m_selected >= m_last_selectable_item)
+				jumpBottom = true;
+		}
+
+		if(jumpBottom) {
+			m_top = max;
+		}
+		else if (dir == justCheck)
+		{
+			if(m_first_selectable_item==-1)
+			{
+				m_first_selectable_item = 0;
+				if(m_selected>0)
+				{
+					m_content->cursorHome();
+					if (!m_content->currentCursorSelectable()) {
+						do
+						{
+							m_content->cursorMove(1);
+							m_first_selectable_item = m_content->cursorGet();
+						}
+						while (!m_content->currentCursorSelectable());
+					}
+					m_content->cursorSet(m_selected);
+					if(oldline==0)
+						oldline = m_selected;
+				}
+			}
+			if(indexchanged && m_selected < m_items_per_page) {
+				oldline = m_selected;
+			}
+
+			m_top = m_selected - oldline;
+		}
+		else if (dir == moveUp || dir == pageUp)
+		{
+			if(m_first_selectable_item > 0 && m_selected == m_first_selectable_item)
+			{
+				oldline = m_selected;
+			}
+			m_top = m_selected - oldline;
+		}
+
+		if(m_top < 0 || oldline < 0) {
+			m_top = 0;
+		}
+
+		// eDebug("[eListbox] moveSelection 2 dir=%d oldline=%d oldtop=%d m_top=%d m_selected=%d m_items_per_page=%d sz=%d jumpBottom=%d columns=%d", dir, oldline, oldtop, m_top, m_selected, m_items_per_page, m_content->size(),jumpBottom, m_columns);
+
+	}
 
 	// if it is, then the old selection clip is irrelevant, clear it or we'll get artifacts
 	if (m_top != oldtop && m_content)
