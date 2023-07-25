@@ -156,6 +156,7 @@ public:
 	};
 
 	void setFlexMode(int mode);
+	void setScrollMode(int scroll);
 	void setItemWidth(int w);
 	void setSelectionHeight(int h);
 	void setSelectionWidth(int w);
