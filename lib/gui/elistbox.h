@@ -156,7 +156,7 @@ public:
 	};
 
 	void setFlexMode(int mode);
-	//void setScrollMode(int scroll);
+	void setScrollMode(int scroll);
 	void setItemWidth(int w);
 	void setSelectionHeight(int h);
 	void setSelectionWidth(int w);
@@ -213,7 +213,7 @@ protected:
 	void recalcSize();
 
 private:
-	int m_scrollbar_mode, m_prev_scrollbar_page;
+	int m_scrollbar_mode, m_scroll_mode, m_prev_scrollbar_page;
 	bool m_content_changed;  
 	bool m_enabled_wrap_around;
 	bool m_itemheight_set;
