@@ -6,7 +6,7 @@
 #include <lib/base/wrappers.h>
 
 eListbox::eListbox(eWidget *parent) :
-	eWidget(parent), m_scrollbar_mode(showNever), m_prev_scrollbar_page(-1),
+	eWidget(parent), m_scrollbar_mode(showNever), m_scroll_mode(byPage), m_prev_scrollbar_page(-1),
 	m_content_changed(false), m_enabled_wrap_around(false), m_itemheight_set(false),
 	m_itemwidth_set(false), m_selectionheight_set(false), m_selectionwidth_set(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20),
 	m_top(0), m_selected(0), m_flex_mode(flexVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
