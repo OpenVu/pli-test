@@ -65,6 +65,17 @@ void eListbox::setFlexMode(int mode)
 	}
 }
 
+void eListbox::setScrollMode(int scroll)
+{
+	if (m_scrollbar && m_scroll_mode != scroll)
+	{
+		m_scroll_mode = scroll;
+		updateScrollBar();
+		return;
+	}
+	m_scroll_mode = scroll;
+}
+
 void eListbox::setWrapAround(bool state)
 {
 	m_enabled_wrap_around = state;
