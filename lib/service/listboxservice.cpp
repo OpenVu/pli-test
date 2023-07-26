@@ -589,6 +589,11 @@ void eListboxServiceContent::setSize(const eSize &size)
 		setVisualMode(m_visual_mode);
 }
 
+void eListboxServiceContent::setSelectionSize(const eSize &size)
+{
+	m_selectionsize = size;
+}
+
 void eListboxServiceContent::setGetPiconNameFunc(ePyObject func)
 {
 	if (m_GetPiconNameFunc)
