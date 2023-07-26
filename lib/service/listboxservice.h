@@ -148,6 +148,7 @@ protected:
 
 	void cursorSave();
 	void cursorRestore();
+	void cursorSaveLine(int n);
 	int cursorRestoreLine();
 	int size();
 
