@@ -1027,14 +1027,75 @@ int eListbox::event(int event, void *data, void *data2)
 
 void eListbox::recalcSize()
 {
-	m_content_changed=true;
-	m_prev_scrollbar_page=-1;
+	m_content_changed = true;
+	m_prev_scrollbar_page = -1;
 	if (m_content)
-		m_content->setSize(eSize(size().width(), m_itemheight));
-	m_items_per_page = size().height() / m_itemheight;
+	{
+		if (size().width() > -1 && size().height() > -1)
+		{
+			if (!m_itemheight_set && !m_itemwidth_set && m_selectionheight_set && m_selectionwidth_set)
+			{
+				m_itemheight = m_selectionheight;
+				m_itemwidth = m_selectionwidth;
+			}
+			if (m_itemheight_set && m_itemwidth_set && !m_selectionheight_set && !m_selectionwidth_set)
+			{
+				m_selectionwidth = m_itemwidth;
+				m_selectionheight = m_itemheight;
+			}
 
-	if (m_items_per_page < 0) /* TODO: whyever - our size could be invalid, or itemheigh could be wrongly specified. */
- 		m_items_per_page = 0;
+			int diffx = (m_selectionwidth > m_itemwidth) ? (m_selectionwidth - m_itemwidth) : 0;
+			int diffy = (m_selectionheight > m_itemheight) ? (m_selectionheight - m_itemheight) : 0;
+
+			if (m_flex_mode == flexGrid || m_flex_mode == flexHorizontal)
+			{
+				m_columns = (!m_columns_set || (m_columns > size().width() / (m_itemwidth + m_margin.x()))) ? size().width() / (m_itemwidth + m_margin.x()) : m_columns;
+				if (m_flex_mode == flexGrid)
+				{
+					m_rows = (!m_rows_set || (m_rows > size().height() / (m_itemheight + m_margin.y()))) ? size().height() / (m_itemheight + m_margin.y()) : m_rows;
+					if (m_rows < 2)
+						m_flex_mode = flexHorizontal;
+				}
+				if (m_center_list)
+				{
+					if ((((size().width() - ((m_itemwidth * m_columns) + (m_margin.x() * (m_columns - 1)))) - diffx) / 2) > 0)
+						xoffset = (((size().width() - ((m_itemwidth * m_columns) + (m_margin.x() * (m_columns - 1)))) - diffx) / 2);
+					if ((((size().height() - ((m_itemheight * m_rows) + (m_margin.y() * (m_rows - 1)))) - diffy) / 2) > 0 && m_flex_mode == flexGrid)
+						yoffset = (((size().height() - ((m_itemheight * m_rows) + (m_margin.y() * (m_rows - 1)))) - diffy) / 2);
+					if ((((size().height() - m_itemheight) - diffy) / 2) > 0 && m_flex_mode == flexHorizontal)
+						yoffset = (((size().height() - m_itemheight) - diffy) / 2);
+				}
+			}
+
+			if (m_flex_mode == flexVertical)
+			{
+				m_itemwidth = m_selectionwidth = size().width();
+				m_selectionheight = m_itemheight;
+				m_columns = size().height() / m_itemheight;
+			}
+
+			m_items_per_page = (m_flex_mode == flexGrid) ? m_columns * m_rows : m_columns;
+			if (m_items_per_page < 0) /* TODO: whyever - our size could be invalid, or itemheigh could be wrongly specified. */
+				m_items_per_page = 0;
+
+			if (m_scrollbar_mode == showAlways || (m_content->size() > m_items_per_page && m_scrollbar_mode == showOnDemand))
+			{
+				if (m_flex_mode == flexGrid)
+				{
+					if ((xoffset - m_scrollbar_width) > 0 && m_center_list)
+						xoffset -= m_scrollbar_width;
+				}
+				if (m_flex_mode == flexHorizontal)
+				{
+					if ((yoffset - m_scrollbar_width) > 0 && m_center_list)
+						yoffset -= m_scrollbar_width;
+				}
+			}
+		}
+
+		m_content->setSize(eSize(m_itemwidth, m_itemheight));
+		m_content->setSelectionSize(eSize(m_selectionwidth, m_selectionheight));
+	}
 
 	moveSelection(justCheck);
 }
