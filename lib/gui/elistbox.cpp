@@ -1156,6 +1156,12 @@ void eListbox::setBackgroundColor(gRGB &col)
 	m_style.m_background_color_set = 1;
 }
 
+void eListbox::setBackgroundColorRows(gRGB &col)
+{
+	m_style.m_background_color_rows = col;
+	m_style.m_background_color_rows_set = 1;
+}
+
 void eListbox::setBackgroundColorGlobal(gRGB &col)
 {
 	m_style.m_background_color_global = col;
