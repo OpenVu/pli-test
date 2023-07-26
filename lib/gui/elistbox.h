@@ -138,6 +138,7 @@ public:
 	}; */
 
 	int getCurrentIndex();
+	int getCurrentPage();
 	void moveSelection(long how);
 	void moveSelectionTo(int index);
 	void moveToEnd();
