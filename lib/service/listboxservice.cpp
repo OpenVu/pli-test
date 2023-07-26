@@ -1192,13 +1192,6 @@ void eListboxServiceContent::refresh()
 		m_listbox->moveSelection(m_listbox->refresh);
 }
 
-void eListboxServiceContent::setItemHeight(int height)
-{
-	m_itemheight = height;
-	if (m_listbox)
-		m_listbox->setItemHeight(height);
-}
-
 void eListboxServiceContent::setItemWidth(int width)
 {
 	m_itemwidth = width;
