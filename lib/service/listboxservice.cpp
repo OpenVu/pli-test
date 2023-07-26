@@ -1186,6 +1186,12 @@ void eListboxServiceContent::paint(gPainter &painter, eWindowStyle &style, const
 	painter.clippop();
 }
 
+void eListboxServiceContent::refresh()
+{
+	if (m_listbox)
+		m_listbox->moveSelection(m_listbox->refresh);
+}
+
 void eListboxServiceContent::setItemHeight(int height)
 {
 	m_itemheight = height;
