@@ -150,6 +150,11 @@ void eListboxPythonStringContent::setSize(const eSize &size)
 	m_itemsize = size;
 }
 
+void eListboxPythonStringContent::setSelectionSize(const eSize &size)
+{
+	m_selectionsize = size;
+}
+
 void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected)
 {
 	ePtr<gFont> fnt;
