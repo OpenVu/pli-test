@@ -1,7 +1,7 @@
 import errno
 import xml.etree.ElementTree
 
-from enigma import addFont, eLabel, ePixmap, ePoint, eRect, eSize, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gRGB, BT_ALPHATEST, BT_ALPHABLEND
+from enigma import addFont, eLabel, ePixmap, ePoint, eRect, eSize, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gRGB, BT_ALPHATEST, BT_ALPHABLEND, eListboxPythonStringContent, eListboxPythonConfigContent
 from os.path import basename, dirname, isfile
 
 from Components.config import ConfigSubsection, ConfigText, config
