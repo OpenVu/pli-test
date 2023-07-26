@@ -127,6 +127,12 @@ void eListboxPythonStringContent::cursorRestore()
 	m_cursor = m_saved_cursor;
 }
 
+void eListboxPythonStringContent::cursorSaveLine(int line)
+{
+	m_saved_cursor_line = line;
+}
+
+
 int eListboxPythonStringContent::cursorRestoreLine()
 {
 	return m_saved_cursor_line;
