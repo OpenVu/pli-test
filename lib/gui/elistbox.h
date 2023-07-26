@@ -169,6 +169,7 @@ public:
 
 	void setBackgroundColor(gRGB &col);
 	void setBackgroundColorGlobal(gRGB &col);
+	void setBackgroundColorRows(gRGB &col);
 	void setBackgroundColorSelected(gRGB &col);
 	void setForegroundColor(gRGB &col);
 	void setForegroundColorSelected(gRGB &col);
