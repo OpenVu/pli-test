@@ -559,6 +559,11 @@ void eListboxServiceContent::cursorRestore()
 	m_saved_cursor = m_list.end();
 }
 
+void eListboxServiceContent::cursorSaveLine(int line)
+{
+	m_saved_cursor_line = line;
+}
+
 int eListboxServiceContent::cursorRestoreLine()
 {
 	return m_saved_cursor_line;
