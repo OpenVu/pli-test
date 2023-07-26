@@ -760,44 +760,94 @@ ePoint eListbox::getSelectionAbsolutePosition()
 
 void eListbox::updateScrollBar()
 {
-	if (!m_content || m_scrollbar_mode == showNever )
+	if (!m_scrollbar || !m_content || m_scrollbar_mode == showNever)
 		return;
 	int entries = m_content->size();
+	bool scrollbarvisible = m_scrollbar->isVisible();
 	if (m_content_changed)
 	{
 		int width = size().width();
 		int height = size().height();
 		m_content_changed = false;
-		if (m_scrollbar_mode == showLeft)
+
+		if (entries > m_items_per_page || m_scrollbar_mode == showAlways)
 		{
-			m_content->setSize(eSize(width-m_scrollbar_width-5, m_itemheight));
-			m_scrollbar->move(ePoint(0, 0));
-			m_scrollbar->resize(eSize(m_scrollbar_width, height));
-			if (entries > m_items_per_page)
+			if (m_flex_mode == flexVertical)
 			{
-				m_scrollbar->show();
+				m_scrollbar->setOrientation(eSlider::orVertical);
+				m_scrollbar->move(ePoint(width - m_scrollbar_width, 0));
+				m_scrollbar->resize(eSize(m_scrollbar_width, height));
+				m_content->setSize(eSize(width - m_scrollbar_width - m_scrollbar_offset, m_itemheight));
+				m_content->setSelectionSize(eSize(width - m_scrollbar_width - m_scrollbar_offset, m_itemheight));
 			}
-			else
+			if (m_flex_mode == flexHorizontal)
 			{
-				m_scrollbar->hide();
+				int posx = (m_selectionwidth > m_itemwidth) ? ((m_selectionwidth - m_itemwidth) / 2) : 0;
+				m_scrollbar->setOrientation(eSlider::orHorizontal);
+				m_scrollbar->move(ePoint(posx + xoffset, m_selectionheight + m_margin.y() + yoffset));
+				m_scrollbar->resize(eSize(((m_itemwidth + m_margin.x()) * m_columns) - m_margin.x(), m_scrollbar_width));
 			}
-		}
-		else if (entries > m_items_per_page || m_scrollbar_mode == showAlways)
-		{
-			m_scrollbar->move(ePoint(width-m_scrollbar_width, 0));
-			m_scrollbar->resize(eSize(m_scrollbar_width, height));
-			m_content->setSize(eSize(width-m_scrollbar_width-5, m_itemheight));
+			if (m_flex_mode == flexGrid)
+			{
+				int posx = (m_selectionwidth > m_itemwidth) ? ((m_selectionwidth - m_itemwidth) / 2) : 0;
+				int posy = (m_selectionheight > m_itemheight) ? ((m_selectionheight - m_itemheight) / 2) : 0;
+				m_scrollbar->setOrientation(eSlider::orVertical);
+				m_scrollbar->move(ePoint( ((((m_itemwidth + m_margin.x()) * m_columns) - m_margin.x()) + m_margin.x() + xoffset + posx), posy + yoffset));
+				m_scrollbar->resize(eSize(m_scrollbar_width, ((m_itemheight + m_margin.y()) * m_rows) - m_margin.y()));
+
+			}
 			m_scrollbar->show();
+			scrollbarvisible = true;
 		}
 		else
 		{
-			m_content->setSize(eSize(width, m_itemheight));
+			if (m_flex_mode == flexVertical)
+			{
+				m_content->setSize(eSize(width, m_itemheight));
+				m_content->setSelectionSize(eSize(width, m_itemheight));
+			}
 			m_scrollbar->hide();
+			scrollbarvisible = false;
 		}
 	}
-	if (m_items_per_page && entries)
+	
+	// Don't set Start/End if scollbar not visible or entries/m_items_per_page = 0
+	if (m_items_per_page && entries && scrollbarvisible)
 	{
+
+		if(m_scroll_mode == byLine && m_flex_mode != flexGrid) {
+
+			if(m_prev_scrollbar_page != m_selected) {
+				m_prev_scrollbar_page = m_selected;
+
+				int start = 0;
+				int range = (m_flex_mode == flexVertical) ? size().height() - (m_scrollbar_border_width * 2) : ((m_itemwidth + m_margin.x()) * m_columns) - m_margin.x();
+				int end = range;
+				// calculate thumb only if needed
+				if (entries > 1 && entries > m_items_per_page)
+				{
+					float fthumb = (float)m_items_per_page / (float)entries * range;
+					float fsteps = ((float)(range - fthumb) / (float)entries);
+					float fstart = (float)m_selected * fsteps;
+					fthumb = (float)range - (fsteps * (float)(entries - 1));
+					int visblethumb = fthumb < 4 ? 4 : (int)(fthumb + 0.5);
+					start = (int)(fstart + 0.5);
+					end = start + visblethumb;
+					if (end > range) {
+						end = range;
+						start = range - visblethumb;
+					}
+					//eDebug("[eListbox] updateScrollBar thumb=%d steps=%d start=%d end=%d range=%d m_items_per_page=%d entries=%d m_selected=%d", thumb, steps, start, end, range, m_items_per_page, entries, m_selected);
+				}
+
+				m_scrollbar->setStartEnd(start, end, true);
+
+			} 
+			return;
+		}
+
 		int curVisiblePage = m_top / m_items_per_page;
+
 		if (m_prev_scrollbar_page != curVisiblePage)
 		{
 			m_prev_scrollbar_page = curVisiblePage;
