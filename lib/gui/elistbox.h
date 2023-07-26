@@ -139,6 +139,7 @@ public:
 
 	int getCurrentIndex();
 	int getCurrentPage();
+	int getTotalPages();
 	void moveSelection(long how);
 	void moveSelectionTo(int index);
 	void moveToEnd();
