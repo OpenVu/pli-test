@@ -172,8 +172,9 @@ void eSlider::setValue(int value)
 	event(evtChangedSlider);
 }
 
-void eSlider::setStartEnd(int start, int end)
+void eSlider::setStartEnd(int start, int end, bool pixel)
 {
+	m_pixel_mode = pixel;
 	m_value = end;
 	m_start = start;
 	event(evtChangedSlider);
