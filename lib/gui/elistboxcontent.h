@@ -41,6 +41,7 @@ protected:
 
 	// void setOutputDevice ? (for allocating colors, ...) .. requires some work, though
 	void setSize(const eSize &size);
+	void setSelectionSize(const eSize &size);
 
 		/* the following functions always refer to the selected item */
 	virtual void paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected);
