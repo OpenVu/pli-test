@@ -646,6 +646,9 @@ class AttributeParser:
 	def backgroundColor(self, value):
 		self.guiObject.setBackgroundColor(parseColor(value))
 
+	def backgroundColorGlobal(self, value):
+		self.guiObject.setBackgroundColorGlobal(parseColor(value))
+
 	def backgroundColorSelected(self, value):
 		self.guiObject.setBackgroundColorSelected(parseColor(value))
 
