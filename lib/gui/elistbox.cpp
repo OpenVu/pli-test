@@ -737,6 +737,27 @@ int eListbox::getTotalPages()
 	return m_content->size() / m_items_per_page + (m_content->size() % m_items_per_page > 0 ? 1 : 0);
 }
 
+ePoint eListbox::getSelectionAbsolutePosition()
+{
+	ePoint abspos = ePoint(0, 0);
+	if (!m_content || !m_selection_enabled)
+		return abspos;
+
+	ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
+	if (m_flex_mode == flexHorizontal || m_flex_mode == flexGrid)
+	{
+		int posx_sel = (m_itemwidth + margin.x()) * (m_selected % m_columns);
+		int posy_sel = (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns);
+		abspos = ePoint(posx_sel + xoffset, posy_sel + yoffset);
+	}
+	else
+	{
+		int posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
+		abspos = ePoint(0 + xoffset, posy_sel + yoffset);
+	}
+	return abspos;
+}
+
 void eListbox::updateScrollBar()
 {
 	if (!m_content || m_scrollbar_mode == showNever )
