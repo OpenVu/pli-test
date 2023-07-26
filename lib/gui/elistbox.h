@@ -233,6 +233,7 @@ private:
 	bool m_rows_set;
 	
 	int m_scrollbar_width;
+	int m_scrollbar_border_width;
 	int m_scrollbar_offset;
 	int m_top, m_selected;
 	int m_flex_mode;
