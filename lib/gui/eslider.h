@@ -8,7 +8,7 @@ class eSlider: public eWidget
 public:
 	eSlider(eWidget *parent);
 	void setValue(int val);
-	void setStartEnd(int start, int end);
+	void setStartEnd(int start, int end, bool pixel = false);
 	void setRange(int min, int max);
 	enum { orHorizontal, orVertical };
 	void setOrientation(int orientation, int swapped = 0);
