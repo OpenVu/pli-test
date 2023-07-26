@@ -38,6 +38,9 @@ void iListboxContent::setListbox(eListbox *lb)
 {
 	m_listbox = lb;
 	m_listbox->setItemHeight(getItemHeight());
+	m_listbox->setItemWidth(getItemWidth());
+	m_listbox->setSelectionHeight(getSelectionHeight());
+	m_listbox->setSelectionWidth(getSelectionWidth());
 }
 
 int iListboxContent::currentCursorSelectable()
