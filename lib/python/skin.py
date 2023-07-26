@@ -431,6 +431,24 @@ def collectAttributes(skinAttributes, node, context, skinPath=None, ignore=(), f
 	if size is not None:
 		skinAttributes.append(("size", size))
 
+class AttribError(Exception):
+	def __init__(self, message):
+		self.msg = message
+
+	def __str__(self):
+		return self.msg
+
+class AttribDeprecatedError(AttribError):
+	pass
+
+
+class AttribElementError(AttribError):
+	pass
+
+
+class AttribValueError(AttribError):
+	pass
+
 
 class AttributeParser:
 	def __init__(self, guiObject, desktop, scale=((1, 1), (1, 1))):
@@ -502,6 +520,44 @@ class AttributeParser:
 
 	def itemHeight(self, value):
 		self.guiObject.setItemHeight(parseScale(value))
+
+	def flex(self, value):
+		try:
+			mode = {
+				'grid' : self.guiObject.flexGrid,
+				'horizontal' : self.guiObject.flexHorizontal,
+				'vertical':self.guiObject.flexVertical,
+			}[value]
+			self.guiObject.setFlexMode(mode)
+		except KeyError:
+			raise AttribValueError("'grid', 'horizontal', 'vertical', 'orHorizontal', 'list'")
+
+	def scrollMode(self, value):
+		try:
+			mode = {
+				'line' : self.guiObject.byLine,
+				'page' : self.guiObject.byPage
+			}[value]
+			self.guiObject.setScrollMode(mode)
+		except KeyError:
+			raise AttribValueError("'line', 'page'")
+
+	def rows(self, value):
+		self.guiObject.setRows(int(value))
+
+	def columns(self, value):
+		self.guiObject.setColumns(int(value))
+
+	def margin(self, value):
+		if value.find(",") == -1:
+			self.guiObject.setMargin(ePoint(int(value), int(value)))
+		else:
+			leftRight, topBottom = [int(x) for x in value.split(",")]
+			self.guiObject.setMargin(ePoint(leftRight, topBottom))
+
+	def centerList(self, value):
+		center = True if int(value) else False
+		self.guiObject.setCenterList(center)
 
 	def pixmap(self, value):
 		if value.endswith(".svg"): # if graphic is svg force alphatest to "blend"
