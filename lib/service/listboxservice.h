@@ -89,6 +89,7 @@ public:
 	int getItemWidth() { return m_itemwidth; }
 	int getSelectionHeight() { return m_selectionheight; }
 	int getSelectionWidth() { return m_selectionwidth; }
+	eSize getSelectionSize() { return m_selectionsize; }
 	void setItemHeight(int height);
 	void setHideNumberMarker(bool doHide) { m_hide_number_marker = doHide; }
 	void setShowTwoLines(int mode) { m_show_two_lines = mode; }
