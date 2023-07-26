@@ -158,7 +158,14 @@ void eListboxPythonStringContent::setSelectionSize(const eSize &size)
 void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected)
 {
 	ePtr<gFont> fnt;
-	painter.clip(eRect(offset, m_itemsize));
+	if (selected || m_selectionsize == m_itemsize)
+	{
+		painter.clip(eRect(offset, m_selectionsize));
+	}
+	else
+	{
+		painter.clip(eRect(ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), m_itemsize));
+	}
 	style.setStyle(painter, selected ? eWindowStyle::styleListboxSelected : eWindowStyle::styleListboxNormal);
 	bool validitem = (m_list && cursorValid());
 	eListboxStyle *local_style = 0;
@@ -202,7 +209,15 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 			/* blit background picture, if available (otherwise, clear only) */
 		if (local_style && local_style->m_background && cursorValid)
 		{
-			if (validitem) painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_background->size().height()) / 2), eRect(), 0);
+			if (validitem)
+			{
+				if (m_selectionsize == m_itemsize)
+					painter.blit(local_style->m_background, offset, eRect(), 0);
+				else
+				{
+					painter.blit(local_style->m_background, ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), eRect(), 0);
+				}
+			}
 		}
 		else
 			painter.clear();
@@ -210,7 +225,15 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 	{
 		if (local_style->m_background && cursorValid)
 		{
-			if (validitem) painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_background->size().height()) / 2), eRect(), gPainter::BT_ALPHATEST);
+			if (validitem)
+			{
+				if (m_selectionsize == m_itemsize)
+					painter.blit(local_style->m_background, offset, eRect(), gPainter::BT_ALPHATEST);
+				else
+				{
+					painter.blit(local_style->m_background, ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), eRect(), gPainter::BT_ALPHATEST);
+				}
+			}
 		}
 		else if (selected && !local_style->m_selection)
 			painter.clear();
@@ -272,7 +295,7 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 		}
 
 		if (selected && (!local_style || !local_style->m_selection))
-			style.drawFrame(painter, eRect(offset, m_itemsize), eWindowStyle::frameListboxEntry);
+			style.drawFrame(painter, eRect(offset, m_selectionsize), eWindowStyle::frameListboxEntry);
 	}
 
 	painter.clippop();
