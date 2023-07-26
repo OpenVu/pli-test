@@ -140,6 +140,7 @@ public:
 	int getCurrentIndex();
 	int getCurrentPage();
 	int getTotalPages();
+	ePoint getSelectionAbsolutePosition();
 	void moveSelection(long how);
 	void moveSelectionTo(int index);
 	void moveToEnd();
