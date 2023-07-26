@@ -730,6 +730,13 @@ int eListbox::getCurrentPage()
 	return (m_content->cursorGet() / m_items_per_page) + 1;
 }
 
+int eListbox::getTotalPages()
+{
+	if (!m_content)
+		return 0;
+	return m_content->size() / m_items_per_page + (m_content->size() % m_items_per_page > 0 ? 1 : 0);
+}
+
 void eListbox::updateScrollBar()
 {
 	if (!m_content || m_scrollbar_mode == showNever )
