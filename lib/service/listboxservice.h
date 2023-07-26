@@ -84,6 +84,7 @@ public:
 
 	int setCurrentMarked(bool);
 
+	void refresh();
 	int getItemHeight() { return m_itemheight; }
 	void setItemHeight(int height);
 	void setHideNumberMarker(bool doHide) { m_hide_number_marker = doHide; }
@@ -96,6 +97,9 @@ public:
 	void setProgressbarBorderWidth(int value) { m_progressbar_border_width = value; }
 	void setNonplayableMargins(int value) { m_nonplayable_margins = value; }
 	void setItemsDistances(int value) { m_items_distances = value; }
+	void setItemWidth(int width);
+	void setSelectionHeight(int height);
+	void setSelectionWidth(int width);
 
 	void setNextTitle(const std::string &string) { m_next_title = string; }
 
@@ -141,6 +145,7 @@ protected:
 
 	void cursorSave();
 	void cursorRestore();
+	int cursorRestoreLine();
 	int size();
 
 	// void setOutputDevice ? (for allocating colors, ...) .. requires some work, though
@@ -162,7 +167,7 @@ private:
 	list m_list;
 	list::iterator m_cursor, m_saved_cursor;
 
-	int m_cursor_number, m_saved_cursor_number;
+	int m_cursor_number, m_saved_cursor_number, m_saved_cursor_line;
 	int m_size;
 
 	eSize m_itemsize;
@@ -192,6 +197,9 @@ private:
 	int m_progressbar_border_width;
 	int m_nonplayable_margins;
 	int m_items_distances;
+	int m_itemwidth;
+	int m_selectionheight;
+	int m_selectionwidth;
 
 	std::string m_next_title;
 };
