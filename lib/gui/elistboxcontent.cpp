@@ -285,6 +285,27 @@ void eListboxPythonStringContent::setItemHeight(int height)
 		m_listbox->setItemHeight(height);
 }
 
+void eListboxPythonStringContent::setItemWidth(int width)
+{
+	m_itemwidth = width;
+	if (m_listbox)
+		m_listbox->setItemWidth(width);
+}
+
+void eListboxPythonStringContent::setSelectionHeight(int height)
+{
+	m_selectionheight = height;
+	if (m_listbox)
+		m_listbox->setSelectionHeight(height);
+}
+
+void eListboxPythonStringContent::setSelectionWidth(int width)
+{
+	m_selectionwidth = width;
+	if (m_listbox)
+		m_listbox->setSelectionWidth(width);
+}
+
 PyObject *eListboxPythonStringContent::getCurrentSelection()
 {
 	if (!(m_list && cursorValid()))
