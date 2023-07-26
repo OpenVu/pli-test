@@ -184,6 +184,7 @@ public:
 	void setScrollbarBackgroundPicture(ePtr<gPixmap> &pm);
 	void setScrollbarSliderBorderWidth(int size);
 	void setScrollbarWidth(int size);
+	void setScrollbarOffset(int size);
 
 	void setFont(gFont *font);
 	void setSecondFont(gFont *font);
