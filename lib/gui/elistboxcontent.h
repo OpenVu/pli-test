@@ -21,6 +21,7 @@ public:
 	void invalidateEntry(int index);
 	void invalidate();
 	eSize getItemSize() { return m_itemsize; }
+	eSize getSelectionSize() { return m_selectionsize; }
 #ifndef SWIG
 protected:
 	void cursorHome();
@@ -55,6 +56,7 @@ protected:
 	ePyObject m_list;
 	int m_cursor, m_saved_cursor, m_saved_cursor_line;
 	eSize m_itemsize;
+	eSize m_selectionsize;
 	ePtr<gFont> m_font;
 	int m_itemheight;
 	int m_itemwidth;
