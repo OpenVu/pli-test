@@ -800,66 +800,126 @@ int eListbox::event(int event, void *data, void *data2)
 		if (!m_content)
 			return 0;
 
-		gPainter &painter = *(gPainter*)data2;
+		gPainter &painter = *(gPainter *)data2;
 
 		m_content->cursorSave();
 		m_content->cursorMove(m_top - m_selected);
 
-		gRegion entryrect = eRect(0, 0, size().width(), m_itemheight);
-		const gRegion &paint_region = *(gRegion*)data;
+		gRegion entryrect;
+		const gRegion &paint_region = *(gRegion *)data;
+		gRGB last_col;
+		gRGB def_col = m_style.m_background_color;
+		int line = 0;
 
-		int xoffset = 0;
-		if (m_scrollbar && m_scrollbar_mode == showLeft)
+		if (m_flex_mode != flexVertical)
 		{
-			xoffset = m_scrollbar->size().width() + 5;
+			if (!isTransparent())
+			{
+				painter.clip(paint_region);
+				if (m_style.m_background_color_global_set)
+					painter.setBackgroundColor(m_style.m_background_color_global);
+				else
+				{
+					if (m_style.m_background_color_set) painter.setBackgroundColor(m_style.m_background_color);
+				}
+				painter.clear();
+				painter.clippop();
+			}
 		}
 
-		for (int y = 0, i = 0; i <= m_items_per_page; y += m_itemheight, ++i)
+		for (int posx = 0, posy = 0, i = 0; (m_flex_mode == flexVertical) ? i <= m_items_per_page : i < m_items_per_page; posx += m_itemwidth + m_margin.x(), ++i)
 		{
+			if(m_style.m_background_color_set && m_style.m_background_color_rows_set){
+				if (m_style.m_background_col_current == def_col || i == 0){
+					m_style.m_background_color = def_col;
+					m_style.m_background_col_current = m_style.m_background_color_rows;
+				}
+				else if (m_style.m_background_col_current == m_style.m_background_color_rows && last_col != m_style.m_background_color_rows && m_content->cursorValid() && i > 0){
+					m_style.m_background_color = m_style.m_background_color_rows;
+					m_style.m_background_col_current = def_col;
+				}
+				else{
+					m_style.m_background_color = def_col;
+					m_style.m_background_col_current = m_style.m_background_color_rows;
+				}
+				last_col = m_style.m_background_color;
+			}
+
+			if (m_flex_mode == flexGrid && i > 0)
+			{
+				if (i % m_columns == 0)
+				{
+					posy += m_itemheight + m_margin.y();
+					posx = 0;
+				}
+			}
+			if (m_flex_mode == flexVertical)
+			{
+				posx = 0;
+				if (i > 0)
+					posy += m_itemheight + m_margin.y();
+			}
+
+			bool sel = (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled);
+			if(sel)
+				line = i;
+
+			entryrect = eRect(posx + xoffset, posy + yoffset, m_selectionwidth, m_selectionheight);
 			gRegion entry_clip_rect = paint_region & entryrect;
 
 			if (!entry_clip_rect.empty())
-				m_content->paint(painter, *style, ePoint(xoffset, y), m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled);
-
-				/* (we could clip with entry_clip_rect, but
-				   this shouldn't change the behavior of any
-				   well behaving content, so it would just
-				   degrade performance without any gain.) */
+			{
+				if (m_flex_mode != flexVertical && m_content->cursorValid())
+				{
+					if (i != (m_selected - m_top) || !m_selection_enabled)
+						m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), 0);
+				}
+				else if (m_flex_mode == flexVertical)
+					m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), sel);
+			}
 
 			m_content->cursorMove(+1);
-			entryrect.moveBy(ePoint(0, m_itemheight));
+			entryrect.moveBy(ePoint(posx + xoffset, posy + yoffset));
+		}
+		m_content->cursorSaveLine(line);
+		m_content->cursorRestore();
+		if (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled && m_flex_mode != flexVertical)
+		{
+			ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
+			int posx_sel = (m_flex_mode == flexGrid) ? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns) : (m_itemwidth + margin.x()) * (m_selected - m_top);
+			int posy_sel = (m_flex_mode == flexGrid) ? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns) : 0;
+			if (m_content)
+			{
+				if (m_flex_mode == flexVertical)
+				{
+					posx_sel = 0;
+					posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
+				}
+
+				if (m_style.m_shadow_set && m_style.m_shadow)
+				{
+					int shadow_x = posx_sel - (((m_selectionwidth + 40) - m_selectionwidth) / 2);
+					int shadow_y = posy_sel - (((m_selectionheight + 40) - m_selectionheight) / 2);
+					eRect rect(shadow_x + xoffset, shadow_y + yoffset, m_selectionwidth + 40, m_selectionheight + 40);
+
+					painter.clip(rect);
+					painter.blitScale(m_style.m_shadow , rect, rect, gPainter::BT_ALPHABLEND);
+					painter.clippop();
+				}
+
+				m_content->paint(painter, *style, ePoint(posx_sel + xoffset, posy_sel + yoffset), 1);
+			}
 		}
 
 		// clear/repaint empty/unused space between scrollbar and listboxentrys
-		if (m_scrollbar_mode == showLeft)
+		if (m_scrollbar && m_scrollbar->isVisible() && !isTransparent() && m_flex_mode == flexVertical)
 		{
-			if (m_scrollbar)
-			{
-				style->setStyle(painter, eWindowStyle::styleListboxNormal);
-				if (m_scrollbar->isVisible())
-				{
-					painter.clip(eRect(m_scrollbar->position() + ePoint(m_scrollbar->size().width(), 0), eSize(5,m_scrollbar->size().height())));
-				}
-				else
-				{
-					painter.clip(eRect(m_scrollbar->position(), eSize(m_scrollbar->size().width() + 5, m_scrollbar->size().height())));
-				}
-				painter.clear();
-				painter.clippop();
-			}
+			style->setStyle(painter, eWindowStyle::styleListboxNormal);
+			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset,0), eSize(m_scrollbar_offset,m_scrollbar->size().height())));
+			if (m_style.m_background_color_set) painter.setBackgroundColor(m_style.m_background_color);
+			painter.clear();
+			painter.clippop();
 		}
-		else
-		{
-			if (m_scrollbar && m_scrollbar->isVisible())
-			{
-				style->setStyle(painter, eWindowStyle::styleListboxNormal);
-				painter.clip(eRect(m_scrollbar->position() - ePoint(5,0), eSize(5,m_scrollbar->size().height())));
-				painter.clear();
-				painter.clippop();
-			}
-		}
-
-		m_content->cursorRestore();
 
 		return 0;
 	}
