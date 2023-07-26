@@ -176,6 +176,7 @@ private:
 	int m_size;
 
 	eSize m_itemsize;
+	eSize m_selectionsize;
 	ePtr<iServiceHandler> m_service_center;
 	ePtr<iListableService> m_lst;
 
