@@ -170,6 +170,9 @@ typedef struct NSVGimage
 // Parses SVG file from a file, returns SVG image as paths.
 NSVGimage* nsvgParseFromFile(const char* filename, const char* units, double dpi);
 
+// Draw rect
+NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor, double radius);
+
 // Parses SVG file from a null terminated string, returns SVG image as paths.
 // Important note: changes the string.
 NSVGimage* nsvgParse(char* input, const char* units, double dpi);
@@ -951,7 +954,7 @@ static void nsvg__addShape(NSVGparser* p)
 		return;
 
 	shape = static_cast<NSVGshape*>(malloc(sizeof(NSVGshape)));
-	if (shape == nullptr) 
+	if (shape == nullptr)
 		return;
 	memset(shape, 0, sizeof(NSVGshape));
 
@@ -2334,6 +2337,7 @@ static void nsvg__parseRect(NSVGparser* p, const char** attr)
 		}
 	}
 
+	
 	if (rx < 0.0 && ry > 0.0) rx = ry;
 	if (ry < 0.0 && rx > 0.0) ry = rx;
 	if (rx < 0.0) rx = 0.0;
@@ -2898,6 +2902,174 @@ NSVGimage* nsvgParse(char* input, const char* units, double dpi)
 
 	// Scale to viewBox
 	nsvg__scaleToViewbox(p, units);
+
+	ret = p->image;
+	p->image = nullptr;
+
+	nsvg__deleteParser(p);
+
+	return ret;
+}
+
+static void nsvg__addRectPath(NSVGparser* p, char closed)
+{
+	NSVGattrib* attr = nsvg__getAttr(p);
+	NSVGpath* path = nullptr;
+	double bounds[4];
+	double* curve;
+	int i;
+
+	if (p->npts < 4)
+		return;
+
+	if (closed)
+		nsvg__lineTo(p, p->pts[0], p->pts[1]);
+
+	path = static_cast<NSVGpath*>(malloc(sizeof(NSVGpath)));
+	if (path == nullptr) goto error;
+	memset(path, 0, sizeof(NSVGpath));
+
+	path->pts = static_cast<double*>(malloc(p->npts*2*sizeof(double)));
+	if (path->pts == nullptr) goto error;
+	path->closed = closed;
+	path->npts = p->npts;
+
+	// Transform path.
+	for (i = 0; i < p->npts; ++i)
+		nsvg__xformPoint(&path->pts[i*2], &path->pts[i*2+1], p->pts[i*2], p->pts[i*2+1], attr->xform);
+
+	// Find bounds
+	for (i = 0; i < path->npts-1; i += 3) {
+		curve = &path->pts[i*2];
+		nsvg__curveBounds(bounds, curve);
+		if (i == 0) {
+			path->bounds[0] = bounds[0];
+			path->bounds[1] = bounds[1];
+			path->bounds[2] = bounds[2];
+			path->bounds[3] = bounds[3];
+		} else {
+			path->bounds[0] = nsvg__minf(path->bounds[0], bounds[0]);
+			path->bounds[1] = nsvg__minf(path->bounds[1], bounds[1]);
+			path->bounds[2] = nsvg__maxf(path->bounds[2], bounds[2]);
+			path->bounds[3] = nsvg__maxf(path->bounds[3], bounds[3]);
+		}
+	}
+
+	path->next = p->plist;
+	p->plist = path;
+
+	return;
+
+error:
+	if (path != nullptr) {
+		if (path->pts != nullptr) free(path->pts);
+		free(path);
+	}
+}
+
+static void nsvg__addRectShape(NSVGparser* p, const gRGB &backgroundColor)
+{
+
+	NSVGshape* shape;
+
+	if (p->plist == nullptr)
+		return;
+
+	shape = static_cast<NSVGshape*>(malloc(sizeof(NSVGshape)));
+	if (shape == nullptr)
+		return;
+	memset(shape, 0, sizeof(NSVGshape));
+
+	shape->fillRule = NSVG_FILLRULE_NONZERO;
+	shape->opacity = 1;
+
+	shape->paths = p->plist;
+	p->plist = nullptr;
+
+	// Calculate shape bounds
+	shape->bounds[0] = shape->paths->bounds[0];
+	shape->bounds[1] = shape->paths->bounds[1];
+	shape->bounds[2] = shape->paths->bounds[2];
+	shape->bounds[3] = shape->paths->bounds[3];
+
+	shape->stroke.type = NSVG_PAINT_NONE;
+	shape->fill.type = NSVG_PAINT_COLOR;
+	shape->fill.color = NSVG_RGB(backgroundColor.r, backgroundColor.g, backgroundColor.b);
+	shape->fill.color |= static_cast<unsigned int>(((backgroundColor.a > 0) ? backgroundColor.a : 1 ) *255) << 24;
+
+
+	// Set flags
+	shape->flags = NSVG_FLAGS_VISIBLE;
+
+	// Add to tail
+	if (p->image->shapes == nullptr)
+		p->image->shapes = shape;
+	else
+		p->shapesTail->next = shape;
+	p->shapesTail = shape;
+}
+
+NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor, double radius)
+{
+	NSVGparser* p;
+	NSVGimage* ret = nullptr;
+
+	p = nsvg__createParser();
+	if (p == nullptr) {
+		return nullptr;
+	}
+	p->dpi = 96.0f;
+
+	if (radius == height && height < width) radius = height / 2.0;
+	if (radius == width && width < height) radius = width / 2.0;
+
+	double x = 0.0;
+	double y = 0.0;
+	double w = width;
+	double h = height;
+	double rx = radius; // marks not set
+	double ry = radius;
+	
+	if (rx < 0.0 && ry > 0.0) rx = ry;
+	if (ry < 0.0 && rx > 0.0) ry = rx;
+	if (rx < 0.0) rx = 0.0;
+	if (ry < 0.0) ry = 0.0;
+	if (rx > w/2.0) rx = w/2.0;
+	if (ry > h/2.0) ry = h/2.0;
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+	if (w != 0.0 && h != 0.0) {
+#pragma GCC diagnostic pop
+		nsvg__resetPath(p);
+
+		if (rx < 0.00001 || ry < 0.0001) {
+			nsvg__moveTo(p, x, y);
+			nsvg__lineTo(p, x+w, y);
+			nsvg__lineTo(p, x+w, y+h);
+			nsvg__lineTo(p, x, y+h);
+		} else {
+			// Rounded rectangle
+			nsvg__moveTo(p, x+rx, y);
+			nsvg__lineTo(p, x+w-rx, y);
+			nsvg__cubicBezTo(p, x+w-rx*(1-NSVG_KAPPA90), y, x+w, y+ry*(1-NSVG_KAPPA90), x+w, y+ry);
+			nsvg__lineTo(p, x+w, y+h-ry);
+			nsvg__cubicBezTo(p, x+w, y+h-ry*(1-NSVG_KAPPA90), x+w-rx*(1-NSVG_KAPPA90), y+h, x+w-rx, y+h);
+			nsvg__lineTo(p, x+rx, y+h);
+			nsvg__cubicBezTo(p, x+rx*(1-NSVG_KAPPA90), y+h, x, y+h-ry*(1-NSVG_KAPPA90), x, y+h-ry);
+			nsvg__lineTo(p, x, y+ry);
+			nsvg__cubicBezTo(p, x, y+ry*(1-NSVG_KAPPA90), x+rx*(1-NSVG_KAPPA90), y, x+rx, y);
+		}
+
+		nsvg__addRectPath(p, 1);
+
+		nsvg__addRectShape(p, backgroundColor);
+	}
+	
+
+	// Scale to viewBox
+	nsvg__scaleToViewbox(p, "px");
 
 	ret = p->image;
 	p->image = nullptr;
