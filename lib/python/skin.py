@@ -737,6 +737,9 @@ class AttributeParser:
 		value = 1 if value.lower() in ("1", "enabled", "nowrap", "on", "true", "yes") else 0
 		self.guiObject.setNoWrap(value)
 
+	def cornerRadius(self, value):
+		self.guiObject.setCornerRadius(int(value))
+
 	def split(self, value):
 		pass
 
