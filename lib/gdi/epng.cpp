@@ -451,6 +451,46 @@ int loadSVG(ePtr<gPixmap> &result, const char *filename, int cached, int width, 
 	return 0;
 }
 
+int drawRect(ePtr<gPixmap> &result, const eSize &size, const gRGB &backgroundColor, int radius, int flags)
+{
+	result = nullptr;
+
+	NSVGimage *image = nullptr;
+	NSVGrasterizer *rast = nullptr;
+	double xscale = 1.0;
+	double yscale = 1.0;
+
+	image = nsvgDrawRect((double)size.width(), (double)size.height(), backgroundColor, (double)radius);
+	if (image == nullptr)
+		return 0;
+
+	rast = nsvgCreateRasterizer();
+	if (rast == nullptr)
+	{
+		nsvgDelete(image);
+		return 0;
+	}
+
+	int width = (int)image->width;
+	int height = (int)image->height;
+	
+	result = new gPixmap(width, height, 32, NULL, -1);
+	if (result == nullptr)
+	{
+		nsvgDeleteRasterizer(rast);
+		nsvgDelete(image);
+		return 0;
+	}
+
+	// Rasterizes SVG image, returns RGBA image (non-premultiplied alpha)
+	nsvgRasterizeFullRect(rast, image, 0, 0, xscale, yscale, (unsigned char*)result->surface->data, width, height, width * 4, flags);
+
+	nsvgDeleteRasterizer(rast);
+	nsvgDelete(image);
+
+	return 0;
+}
+
 int loadImage(ePtr<gPixmap> &result, const char *filename, int accel, int width, int height)
 {
 	if (endsWith(filename, ".png"))
