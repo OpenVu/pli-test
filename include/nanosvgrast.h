@@ -68,7 +68,11 @@ void nsvgRasterize(NSVGrasterizer* r,
 
 void nsvgRasterizeFull(NSVGrasterizer* r, NSVGimage* image,
 						double tx, double ty, double scalex, double scaley,
-						unsigned char* dst, int w, int h, int stride, int bgr);
+						unsigned char* dst, int w, int h, int stride, int bgr, bool alpha = false);
+
+void nsvgRasterizeFullRect(NSVGrasterizer* r,
+				   NSVGimage* image, double tx, double ty, double scalex, double scaley,
+				   unsigned char* dst, int w, int h, int stride, int flags);
 
 // Deletes rasterizer context.
 void nsvgDeleteRasterizer(NSVGrasterizer*);
@@ -1271,10 +1275,10 @@ static void nsvg__unpremultiplyAlpha(unsigned char* image, int w, int h, int str
 }
 
 
-static void nsvg__unpremultiplyBGRAlpha(unsigned char* image, int w, int h, int stride)
+static void nsvg__unpremultiplyBGRAlpha(unsigned char* image, int w, int h, int stride, NSVGcachedPaint* cache, bool alpha)
 {
-	int x,y;
-
+	int x,y,ca;
+	ca = (cache->colors[0] >> 24) & 0xff;
 	// Unpremultiply
 	for (y = 0; y < h; y++) {
 		unsigned char *row = &image[y*stride];
@@ -1284,6 +1288,8 @@ static void nsvg__unpremultiplyBGRAlpha(unsigned char* image, int w, int h, int 
 				row[0] = static_cast<unsigned char>(r*255/a);
 				row[1] = static_cast<unsigned char>(g*255/a);
 				row[2] = static_cast<unsigned char>(b*255/a);
+				if (alpha)
+					row[3] = static_cast<unsigned int>(ca);
 			}
 			row += 4;
 		}
@@ -1329,6 +1335,68 @@ static void nsvg__unpremultiplyBGRAlpha(unsigned char* image, int w, int h, int 
 		}
 	}
 }
+
+static void nsvg__unpremultiplyBGRAlphaRect(unsigned char* image, int w, int h, int stride, NSVGcachedPaint* cache, int flags)
+{
+	int x,y, ca;
+	ca = (cache->colors[0] >> 24) & 0xff;
+	// Unpremultiply
+	for (y = 0; y < h; y++) {
+		unsigned char *row = &image[y*stride];
+		for (x = 0; x < w; x++) {
+			int b = row[0], g = row[1], r = row[2], a = row[3];
+			if (a != 0) {
+				row[0] = static_cast<unsigned char>(r*255/a);
+				row[1] = static_cast<unsigned char>(g*255/a);
+				row[2] = static_cast<unsigned char>(b*255/a);
+				if (flags == 1)
+					row[3] = static_cast<unsigned int>(ca);
+			}
+			row += 4;
+		}
+	}
+
+	// Defringe
+	// for (y = 0; y < h; y++) {
+	// 	unsigned char *row = &image[y*stride];
+	// 	for (x = 0; x < w; x++) {
+	// 		int r = 0, g = 0, b = 0, a = row[3], n = 0;
+	// 		if (a == 0) {
+	// 			if (x-1 > 0 && row[-1] != 0) {
+	// 				b += row[-4];
+	// 				g += row[-3];
+	// 				r += row[-2];
+	// 				n++;
+	// 			}
+	// 			if (x+1 < w && row[7] != 0) {
+	// 				b += row[4];
+	// 				g += row[5];
+	// 				r += row[6];
+	// 				n++;
+	// 			}
+	// 			if (y-1 > 0 && row[-stride+3] != 0) {
+	// 				b += row[-stride];
+	// 				g += row[-stride+1];
+	// 				r += row[-stride+2];
+	// 				n++;
+	// 			}
+	// 			if (y+1 < h && row[stride+3] != 0) {
+	// 				b += row[stride];
+	// 				g += row[stride+1];
+	// 				r += row[stride+2];
+	// 				n++;
+	// 			}
+	// 			if (n > 0) {
+	// 				row[0] = static_cast<unsigned char>(b/n);
+	// 				row[1] = static_cast<unsigned char>(g/n);
+	// 				row[2] = static_cast<unsigned char>(r/n);
+	// 			}
+	// 		}
+	// 		row += 4;
+	// 	}
+	// }
+}
+
 
 
 static void nsvg__initPaint(NSVGcachedPaint* cache, NSVGpaint* paint, double opacity)
@@ -1394,7 +1462,7 @@ static void nsvg__initPaint(NSVGcachedPaint* cache, NSVGpaint* paint, double opa
 
 void nsvgRasterizeFull(NSVGrasterizer* r,
 				   NSVGimage* image, double tx, double ty, double scalex, double scaley,
-				   unsigned char* dst, int w, int h, int stride, int bgr)
+				   unsigned char* dst, int w, int h, int stride, int bgr, bool alpha)
 {
 	NSVGshape *shape = nullptr;
 	NSVGedge *e = nullptr;
@@ -1472,10 +1540,70 @@ void nsvgRasterizeFull(NSVGrasterizer* r,
 	}
 
 	if (bgr)
-		nsvg__unpremultiplyBGRAlpha(dst, w, h, stride);
+		nsvg__unpremultiplyBGRAlpha(dst, w, h, stride, &cache, alpha);
 	else
 		nsvg__unpremultiplyAlpha(dst, w, h, stride);
 
+	r->bitmap = nullptr;
+	r->width = 0;
+	r->height = 0;
+	r->stride = 0;
+}
+
+void nsvgRasterizeFullRect(NSVGrasterizer* r,
+				   NSVGimage* image, double tx, double ty, double scalex, double scaley,
+				   unsigned char* dst, int w, int h, int stride, int flags)
+{
+	NSVGshape *shape = nullptr;
+	NSVGedge *e = nullptr;
+	NSVGcachedPaint cache;
+	int i;
+
+	r->bitmap = dst;
+	r->width = w;
+	r->height = h;
+	r->stride = stride;
+
+	if (w > r->cscanline) {
+		r->cscanline = w;
+		r->scanline = static_cast<unsigned char*>(realloc(r->scanline, w));
+		if (r->scanline == nullptr) return;
+	}
+
+	for (i = 0; i < h; i++)
+		memset(&dst[i*stride], 0, w*4);
+
+	for (shape = image->shapes; shape != nullptr; shape = shape->next) {
+		if (!(shape->flags & NSVG_FLAGS_VISIBLE))
+			continue;
+
+		if (shape->fill.type != NSVG_PAINT_NONE) {
+			nsvg__resetPool(r);
+			r->freelist = nullptr;
+			r->nedges = 0;
+
+			nsvg__flattenShape(r, shape, scalex, scaley);
+
+			// Scale and translate edges
+			for (i = 0; i < r->nedges; i++) {
+				e = &r->edges[i];
+				e->x0 = tx + e->x0;
+				e->y0 = (ty + e->y0) * NSVG__SUBSAMPLES;
+				e->x1 = tx + e->x1;
+				e->y1 = (ty + e->y1) * NSVG__SUBSAMPLES;
+			}
+
+			// Rasterize edges
+			qsort(r->edges, r->nedges, sizeof(NSVGedge), nsvg__cmpEdge);
+
+			// now, traverse the scanlines and find the intersections on each scanline, use non-zero rule
+			nsvg__initPaint(&cache, &shape->fill, shape->opacity);
+
+			nsvg__rasterizeSortedEdges(r, tx,ty, scalex, scaley, &cache, shape->fillRule);
+		}
+	}
+	nsvg__unpremultiplyBGRAlphaRect(dst, w, h, stride, &cache, flags);
+	
 	r->bitmap = nullptr;
 	r->width = 0;
 	r->height = 0;
