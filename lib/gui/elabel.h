@@ -51,6 +51,7 @@ private:
 	int m_border_size;
 	int m_nowrap;
 	int m_radius;
+	ePtr<gPixmap> m_pixmap;
 
 	enum eLabelEvent
 	{
