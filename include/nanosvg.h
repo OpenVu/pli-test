@@ -3021,14 +3021,14 @@ NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor
 	}
 	p->dpi = 96.0f;
 
-	if (fabs(radius - height) < 1e-6 && height < width) {
-    		radius = height / 2.0;
-	}
-	if (fabs(radius - width) < 1e-6 && width < height) {
-    		radius = width / 2.0;
-	}
-	//if (radius == height && height < width) radius = height / 2.0;
-	//if (radius == width && width < height) radius = width / 2.0;
+	//if (fabs(radius - height) < 1e-6 && height < width) {
+    		//radius = height / 2.0;
+	//}
+	//if (fabs(radius - width) < 1e-6 && width < height) {
+    		//radius = width / 2.0;
+	//}
+	if (radius == height && height < width) radius = height / 2.0;
+	if (radius == width && width < height) radius = width / 2.0;
 
 	double x = 0.0;
 	double y = 0.0;
