@@ -451,6 +451,73 @@ int loadSVG(ePtr<gPixmap> &result, const char *filename, int cached, int width, 
 	return 0;
 }
 
+int readSVG(ePtr<gPixmap> &result, char *svgCode, int width, int height, float scale)
+{
+	result = nullptr;
+
+	NSVGimage *image = nullptr;
+	NSVGrasterizer *rast = nullptr;
+	double xscale = 1.0;
+	double yscale = 1.0;
+
+	image = nsvgParse(svgCode, "px", 96.0f);
+	if (image == nullptr)
+		return 0;
+
+	rast = nsvgCreateRasterizer();
+	if (rast == nullptr)
+	{
+		nsvgDelete(image);
+		return 0;
+	}
+
+	if (height > 0)
+		yscale = ((double) height) / image->height;
+
+	if (width > 0)
+	{
+		xscale = ((double) width) / image->width;
+		if (height <= 0)
+		{
+			yscale = xscale;
+			height = (int)(image->height * yscale);
+		}
+	}
+	else if (height > 0)
+	{
+		xscale = yscale;
+		width = (int)(image->width * xscale);
+	}
+	else if (scale > 0)
+	{
+		xscale = (double) scale;
+		yscale = (double) scale;
+		width = (int)(image->width * scale);
+		height = (int)(image->height * scale);
+	}
+	else
+	{
+		width = (int)image->width;
+		height = (int)image->height;
+	}
+
+	result = new gPixmap(width, height, 32, NULL, -1);
+	if (result == nullptr)
+	{
+		nsvgDeleteRasterizer(rast);
+		nsvgDelete(image);
+		return 0;
+	}
+
+	// Rasterizes SVG image, returns RGBA image (non-premultiplied alpha)
+	nsvgRasterizeFull(rast, image, 0, 0, xscale, yscale, (unsigned char*)result->surface->data, width, height, width * 4, 1);
+
+	nsvgDeleteRasterizer(rast);
+	nsvgDelete(image);
+
+	return 0;
+}
+
 int drawRect(ePtr<gPixmap> &result, const eSize &size, const gRGB &backgroundColor, int radius, int flags)
 {
 	result = nullptr;
