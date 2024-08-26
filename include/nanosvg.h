@@ -3014,6 +3014,7 @@ NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor
 {
 	NSVGparser* p;
 	NSVGimage* ret = nullptr;
+	const double EPSILON = 1e-6; // Define a small epsilon for floating-point comparisons
 
 	p = nsvg__createParser();
 	if (p == nullptr) {
@@ -3021,14 +3022,8 @@ NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor
 	}
 	p->dpi = 96.0f;
 
-	//if (fabs(radius - height) < 1e-6 && height < width) {
-    		//radius = height / 2.0;
-	//}
-	//if (fabs(radius - width) < 1e-6 && width < height) {
-    		//radius = width / 2.0;
-	//}
-	if (radius == height && height < width) radius = height / 2.0;
-	if (radius == width && width < height) radius = width / 2.0;
+	if (fabs(radius - height) < EPSILON && height < width) radius = height / 2.0;
+	if (fabs(radius - width) < EPSILON && width < height) radius = width / 2.0;
 
 	double x = 0.0;
 	double y = 0.0;
@@ -3043,7 +3038,6 @@ NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor
 	if (ry < 0.0) ry = 0.0;
 	if (rx > w/2.0) rx = w/2.0;
 	if (ry > h/2.0) ry = h/2.0;
-
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -3074,7 +3068,6 @@ NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor
 		nsvg__addRectShape(p, backgroundColor);
 	}
 	
-
 	// Scale to viewBox
 	nsvg__scaleToViewbox(p, "px");
 
@@ -3085,6 +3078,7 @@ NSVGimage* nsvgDrawRect(double width, double height, const gRGB &backgroundColor
 
 	return ret;
 }
+
 
 NSVGimage* nsvgParseFromFile(const char* filename, const char* units, double dpi)
 {
