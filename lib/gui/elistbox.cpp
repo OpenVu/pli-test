@@ -157,7 +157,7 @@ void eListbox::moveSelection(long dir)
 
 	//dir = ((dir == pageUp && m_flex_mode == flexVertical) || dir == moveUp && m_flex_mode == flexHorizontal) ? prevPage :
 	//dir = (((dir == pageUp) && (m_flex_mode == flexVertical)) || ((dir == moveUp) && (m_flex_mode == flexHorizontal))) ? prevPage :
-	dir = static_cast<enum_type>((((dir == pageUp) && (m_flex_mode == flexVertical)) || ((dir == moveUp) && (m_flex_mode == flexHorizontal))) ? prevPage : nextPage);
+	dir = static_cast<PyEnum_Type>((((dir == pageUp) && (m_flex_mode == flexVertical)) || ((dir == moveUp) && (m_flex_mode == flexHorizontal))) ? prevPage : nextPage);
 	
 	//((dir == pageDown && m_flex_mode == flexVertical) || (dir == moveDown && m_flex_mode == flexHorizontal)) ? nextPage : dir;
 
