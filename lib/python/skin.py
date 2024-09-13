@@ -555,6 +555,12 @@ class AttributeParser:
 			leftRight, topBottom = [int(x) for x in value.split(",")]
 			self.guiObject.setMargin(ePoint(leftRight, topBottom))
 
+	def useShadow(self, value):
+		self.guiObject.setShadow(int(value))
+
+	def useOverlay(self, value):
+		self.guiObject.setOverlay(int(value))
+
 	def centerList(self, value):
 		center = True if int(value) else False
 		self.guiObject.setCenterList(center)
