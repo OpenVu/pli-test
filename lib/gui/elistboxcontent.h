@@ -100,6 +100,9 @@ public:
 	void setSelectionWidth(int width);
 	void setFlexMode(int mode);
 	void setMargin(const ePoint &margin);
+	void setShadow(int shadow);
+	void setOverlay(int overlay);
+	void setBackgroundColorGlobal(gRGB &col);
 	void setSelectionClip(eRect &rect, bool update=false);
 	void updateClip(gRegion &);
 	void resetClip();
