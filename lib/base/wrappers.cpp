@@ -4,6 +4,7 @@
 #include <sys/select.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <filesystem>
 #include <glib.h>
 
 #include <vector>
@@ -324,4 +325,9 @@ bool endsWith(const std::string &str, const std::string &suffix)
 bool startsWith(const std::string& str, const std::string& prefix)
 {
         return prefix.size() && str.size() >= prefix.size() && str.find(prefix) == 0;
+}
+
+bool fileExists(const std::string& filename)
+{
+    return std::filesystem::exists(filename);
 }
