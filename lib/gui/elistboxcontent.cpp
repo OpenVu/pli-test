@@ -1207,6 +1207,8 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 				goto error_out;
 			}
 		}
+		if (local_style->m_overlay_set && local_style->m_overlay && !selected)
+			painter.blitScale(local_style->m_overlay ,eRect(offs, m_itemsize) ,eRect(offs, m_itemsize), gPainter::BT_ALPHABLEND);
 	}
 
 	if (selected && !sel_clip.valid() && (!local_style || !local_style->m_selection))
