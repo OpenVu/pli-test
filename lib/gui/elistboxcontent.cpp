@@ -1330,6 +1330,24 @@ void eListboxPythonMultiContent::setMargin(const ePoint &margin)
 		m_listbox->setMargin(margin);
 }
 
+void eListboxPythonMultiContent::setShadow(int shadow)
+{
+	if (m_listbox)
+		m_listbox->setShadow(shadow);
+}
+
+void eListboxPythonMultiContent::setOverlay(int overlay)
+{
+	if (m_listbox)
+		m_listbox->setOverlay(overlay);
+}
+
+void eListboxPythonMultiContent::setBackgroundColorGlobal(gRGB &col)
+{
+	if (m_listbox)
+		m_listbox->setBackgroundColorGlobal(col);
+}
+
 void eListboxPythonMultiContent::setList(ePyObject list)
 {
 	m_old_clip = m_clip = gRegion::invalidRegion();
