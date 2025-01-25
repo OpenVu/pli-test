@@ -985,7 +985,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 				y += offs.y();
 				int width = PyFloat_Check(pwidth) ? (int)PyFloat_AsDouble(pwidth) : PyLong_AsLong(pwidth); 
 				int height = PyFloat_Check(pheight) ? (int)PyFloat_AsDouble(pheight) : PyLong_AsLong(pheight);
-				int bwidth = pborderWidth ? PyInt_AsLong(pborderWidth) : 0;
+				int bwidth = pborderWidth ? PyLong_AsLong(pborderWidth) : 0;
 
 				if (width == 0 || width < 0)
 					width = (selected) ? m_selectionsize.width() + width : m_itemsize.width() + width;
@@ -1024,7 +1024,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 					painter.clip(rect);
 					if (pborderColor)
 					{
-						unsigned int color = PyInt_AsUnsignedLongMask(pborderColor);
+						unsigned int color = PyLong_AsUnsignedLongMask(pborderColor);
 						painter.setForegroundColor(gRGB(color));
 					}
 
