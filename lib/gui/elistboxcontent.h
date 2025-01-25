@@ -86,7 +86,7 @@ class eListboxPythonMultiContent: public eListboxPythonStringContent
 public:
 	eListboxPythonMultiContent();
 	~eListboxPythonMultiContent();
-	enum { TYPE_TEXT, TYPE_PROGRESS, TYPE_PIXMAP, TYPE_PIXMAP_ALPHATEST, TYPE_PIXMAP_ALPHABLEND, TYPE_PROGRESS_PIXMAP };
+	enum { TYPE_RECT, TYPE_TEXT, TYPE_PROGRESS, TYPE_PIXMAP, TYPE_PIXMAP_ALPHATEST, TYPE_PIXMAP_ALPHABLEND, TYPE_PROGRESS_PIXMAP };
 	void paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected);
 	void refresh();
 	int currentCursorSelectable();
