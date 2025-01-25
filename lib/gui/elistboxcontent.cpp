@@ -158,6 +158,14 @@ void eListboxPythonStringContent::setSelectionSize(const eSize &size)
 void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected)
 {
 	ePtr<gFont> fnt;
+	if (selected || m_selectionsize == m_itemsize)
+	{
+		painter.clip(eRect(offset, m_selectionsize));
+	}
+	else
+	{
+		painter.clip(eRect(ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), m_itemsize));
+	}
 	painter.clip(eRect(offset, m_itemsize));
 	style.setStyle(painter, selected ? eWindowStyle::styleListboxSelected : eWindowStyle::styleListboxNormal);
 	bool validitem = (m_list && cursorValid());
@@ -199,19 +207,40 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 	/* if we have no transparent background */
 	if (!local_style || !local_style->m_transparent_background)
 	{
-			/* blit background picture, if available (otherwise, clear only) */
+		/* blit background picture, if available (otherwise, clear only) */
 		if (local_style && local_style->m_background && cursorValid)
 		{
-			if (validitem) painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_background->size().height()) / 2), eRect(), 0);
+			if (validitem)
+			{
+				if (m_selectionsize == m_itemsize)
+					painter.blit(local_style->m_background, offset, eRect(), 0);
+				else
+				{
+					painter.blit(local_style->m_background, ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), eRect(), 0);
+				}
+			}
 		}
+		//else if (local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
+			//painter.drawGradient(eRect(offset, m_itemsize), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
 		else
 			painter.clear();
-	} else
+	}
+	else
 	{
 		if (local_style->m_background && cursorValid)
 		{
-			if (validitem) painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_background->size().height()) / 2), eRect(), gPainter::BT_ALPHATEST);
+			if (validitem)
+			{
+				if (m_selectionsize == m_itemsize)
+					painter.blit(local_style->m_background, offset, eRect(), gPainter::BT_ALPHATEST);
+				else
+				{
+					painter.blit(local_style->m_background, ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), eRect(), gPainter::BT_ALPHATEST);
+				}
+			}
 		}
+		//else if (local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
+			//painter.drawGradient(eRect(offset, m_itemsize), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
 		else if (selected && !local_style->m_selection)
 			painter.clear();
 	}
@@ -798,12 +827,20 @@ static ePyObject lookupColor(ePyObject color, ePyObject data)
 
 void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, const ePoint &offset, int selected)
 {
-	gRegion itemregion(eRect(offset, m_itemsize));
+	//gRegion itemregion(eRect(offset, m_itemsize));
+	gRegion itemregion;
+	if (selected || m_selectionsize == m_itemsize)
+		itemregion = eRect(offset, m_selectionsize);
+	else
+	{
+		itemregion = eRect(ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2)), m_itemsize);
+	}
 	eListboxStyle *local_style = 0;
 	eRect sel_clip(m_selection_clip);
 	bool cursorValid = this->cursorValid();
 	gRGB border_color;
 	int border_size = 0;
+	ePoint offs = (selected || m_selectionsize == m_itemsize) ? offset : ePoint(offset.x() + ((m_selectionsize.width() - m_itemsize.width()) / 2), offset.y() + ((m_selectionsize.height() - m_itemsize.height()) / 2));
 
 	if (sel_clip.valid())
 		sel_clip.moveBy(offset);
@@ -817,7 +854,8 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 	}
 
 	painter.clip(itemregion);
-	clearRegion(painter, style, local_style, ePyObject(), ePyObject(), ePyObject(), ePyObject(), selected, itemregion, sel_clip, offset, m_itemsize, cursorValid);
+	//clearRegion(painter, style, local_style, ePyObject(), ePyObject(), ePyObject(), ePyObject(), selected, itemregion, sel_clip, offset, m_itemsize, cursorValid);
+	clearRegion(painter, style, local_style, ePyObject(), ePyObject(), ePyObject(), ePyObject(), selected, itemregion, sel_clip, offs, (selected) ? m_selectionsize : m_itemsize, cursorValid);
 
 	ePyObject items, buildfunc_ret;
 
@@ -908,6 +946,105 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 			switch (type)
 			{
+			case TYPE_RECT:
+			{
+				ePyObject px = PyTuple_GET_ITEM(item, 1),
+						  py = PyTuple_GET_ITEM(item, 2),
+						  pwidth = PyTuple_GET_ITEM(item, 3),
+						  pheight = PyTuple_GET_ITEM(item, 4),
+						  pbackColor,
+						  pbackColorSelected,
+						  pforeColor,
+						  pforeColorSelected, pborderWidth, pborderColor;
+
+				if (size > 5)
+					pbackColor = lookupColor(PyTuple_GET_ITEM(item, 5), data);
+
+				if (size > 6)
+					pbackColorSelected = lookupColor(PyTuple_GET_ITEM(item, 6), data);
+
+				if (size > 7)
+				{
+					pborderWidth = PyTuple_GET_ITEM(item, 7);
+					if (pborderWidth == Py_None)
+						pborderWidth = ePyObject();
+				}
+
+				if (size > 8)
+					pborderColor = lookupColor(PyTuple_GET_ITEM(item, 8), data);
+
+				if (!(px && py && pwidth && pheight))
+				{
+					eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_RECT, x, y, width, height [, backColor, backColorSelected, borderWidth, borderColor])");
+					goto error_out;
+				}
+
+				int x = PyFloat_Check(px) ? (int)PyFloat_AsDouble(px) : PyLong_AsLong(px);
+				x += offs.x();
+				int y = PyFloat_Check(py) ? (int)PyFloat_AsDouble(py) : PyLong_AsLong(py);
+				y += offs.y();
+				int width = PyFloat_Check(pwidth) ? (int)PyFloat_AsDouble(pwidth) : PyLong_AsLong(pwidth); 
+				int height = PyFloat_Check(pheight) ? (int)PyFloat_AsDouble(pheight) : PyLong_AsLong(pheight);
+				int bwidth = pborderWidth ? PyInt_AsLong(pborderWidth) : 0;
+
+				if (width == 0 || width < 0)
+					width = (selected) ? m_selectionsize.width() + width : m_itemsize.width() + width;
+				if (height == 0 || height < 0)
+					height = (selected) ? m_selectionsize.height() + height : m_itemsize.height() + height;
+
+				if (selected && (m_selectionsize.height() > m_itemsize.height()))
+				{
+					if ((y - offs.y()) >= (m_itemsize.height() / 2))
+						y += m_selectionsize.height() - m_itemsize.height();
+				}
+
+				if (selected && (m_selectionsize.width() > m_itemsize.width()))
+				{
+					if ((x - offs.x()) >= (m_itemsize.width() / 2))
+						x += m_selectionsize.width() - m_itemsize.width();
+				}
+
+				eRect rect;
+				if (!selected)
+					rect = eRect(x, y, width, height);
+				else
+					rect = eRect(x + bwidth, y + bwidth, width - bwidth * 2, height - bwidth * 2);
+				painter.clip(rect);
+
+				{
+					gRegion rc(rect);
+					bool mustClear = (selected && pbackColorSelected) || (!selected && pbackColor);
+					clearRegion(painter, style, local_style, pforeColor, pforeColorSelected, pbackColor, pbackColorSelected, selected, rc, sel_clip, offs, (selected) ? m_selectionsize : m_itemsize, cursorValid, mustClear);
+				}
+				painter.clippop();
+
+				if (bwidth && selected)
+				{
+					eRect rect(eRect(x, y, width, height));
+					painter.clip(rect);
+					if (pborderColor)
+					{
+						unsigned int color = PyInt_AsUnsignedLongMask(pborderColor);
+						painter.setForegroundColor(gRGB(color));
+					}
+
+					rect.setRect(x, y, width, bwidth);
+					painter.fill(rect);
+
+					rect.setRect(x, y + bwidth, bwidth, height - bwidth);
+					painter.fill(rect);
+
+					rect.setRect(x + bwidth, y + height - bwidth, width - bwidth, bwidth);
+					painter.fill(rect);
+
+					rect.setRect(x + width - bwidth, y + bwidth, bwidth, height - bwidth);
+					painter.fill(rect);
+
+					painter.clippop();
+				}
+
+				break;
+			}	
 			case TYPE_TEXT: // text
 			{
 			/*
