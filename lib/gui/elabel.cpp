@@ -16,6 +16,7 @@ eLabel::eLabel(eWidget *parent, int markedPos): eWidget(parent)
 
 	m_have_foreground_color = 0;
 	m_have_shadow_color = 0;
+	m_have_background_color = 0;
 
 	m_nowrap = 0;
 	m_border_size = 0;
@@ -92,6 +93,8 @@ int eLabel::event(int event, void *data, void *data2)
 				painter.setForegroundColor(m_shadow_color);
 			else if (m_have_foreground_color)
 				painter.setForegroundColor(m_foreground_color);
+			else if (m_have_background_color)
+				painter.setBackgroundColor(m_background_color);
 
 			int flags = 0;
 			if (m_valign == alignTop)
@@ -212,6 +215,17 @@ void eLabel::setShadowColor(const gRGB &col)
 		m_have_shadow_color = 1;
 		invalidate();
 	}
+}
+
+void eLabel::setBackgroundColor(const gRGB &col)
+{
+    if ((!m_have_background_color) || (m_background_color != col))
+    {
+        m_background_color = col;
+        m_have_background_color = 1;
+        m_pixmap = 0;  // Force redrawing of pixmap
+        invalidate();
+    }
 }
 
 void eLabel::setShadowOffset(const ePoint &offset)
