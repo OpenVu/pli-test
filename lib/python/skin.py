@@ -521,6 +521,14 @@ class AttributeParser:
 	def itemHeight(self, value):
 		self.guiObject.setItemHeight(parseScale(value))
 
+	def itemCornerRadius(self, value):
+		radius, edgeValue = parseRadius(value)
+		self.guiObject.setItemCornerRadius(radius, edgeValue)
+		
+	def itemCornerRadiusSelected(self, value):
+		radius, edgeValue = parseRadius(value)
+		self.guiObject.setItemCornerRadiusSelected(radius, edgeValue)
+
 	def flex(self, value):
 		try:
 			mode = {
