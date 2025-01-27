@@ -65,7 +65,7 @@ protected:
 #ifndef SWIG
 struct eListboxStyle
 {
-	ePtr<gPixmap> m_background, m_selection, m_shadow, m_overlay;
+	ePtr<gPixmap> m_background, m_selection, m_selection_large, m_shadow, m_overlay;
 	int m_transparent_background;
 	gRGB m_background_color, m_background_color_rows, m_background_color_global, m_background_color_selected,
 	m_foreground_color, m_foreground_color_selected, m_border_color, m_sliderborder_color, m_sliderforeground_color;
