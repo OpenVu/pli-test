@@ -97,6 +97,8 @@ private:
 	int m_z_position;
 	int m_lowered;
 	int m_notify_child_on_position_change;
+
+	int m_radius;
 protected:
 	void mayKillFocus();
 public:
@@ -132,6 +134,8 @@ public:
 	void setPositionNotifyChild(int n) { m_notify_child_on_position_change = 1; }
 
 	void notifyShowHide();
+
+	void setCornerRadius(int radius);
 };
 
 extern eWidgetDesktop *getDesktop(int which);
