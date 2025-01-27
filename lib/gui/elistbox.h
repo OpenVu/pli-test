@@ -239,7 +239,7 @@ private:
 	int m_scrollbar_border_width;
 	int m_scrollbar_offset;
 	int m_top, m_selected;
-	int m_flex_mode;
+	int m_layout_mode;
 	int m_itemheight;
 	int m_itemwidth;
 	int m_selectionheight;
