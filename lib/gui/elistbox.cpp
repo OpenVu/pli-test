@@ -1198,6 +1198,11 @@ void eListbox::setSelectionPicture(ePtr<gPixmap> &pm)
 	m_style.m_selection = pm;
 }
 
+void eListbox::setSelectionPictureLarge(ePtr<gPixmap> &pm)
+{
+	m_style.m_selection_large = pm;
+}
+
 void eListbox::setSliderPicture(ePtr<gPixmap> &pm)
 {
 	m_scrollbarpixmap = pm;
