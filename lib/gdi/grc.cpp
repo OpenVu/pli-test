@@ -430,6 +430,22 @@ void gPainter::blit(gPixmap *pixmap, const eRect &pos, const eRect &clip, int fl
 	m_rc->submit(o);
 }
 
+void gPainter::drawGradient(const eRect &area, const gRGB &color, const gRGB &color2, int orientation, int flag)
+{
+	if ( m_dc->islocked() )
+		return;
+	gOpcode o;
+	o.opcode=gOpcode::gradient;
+	o.dc = m_dc.grabRef();
+	o.parm.gradient = new gOpcode::para::pgradient;
+	o.parm.gradient->area = area;
+	o.parm.gradient->gradientColor = color;
+	o.parm.gradient->gradientColor2 = color2;
+	o.parm.gradient->orientation = orientation;
+	o.parm.gradient->flag = flag;
+	m_rc->submit(o);
+}
+
 void gPainter::setPalette(gRGB *colors, int start, int len)
 {
 	if ( m_dc->islocked() )
@@ -765,6 +781,14 @@ void gDC::exec(const gOpcode *o)
 		m_pixmap->blit(*o->parm.blit->pixmap, o->parm.blit->position, clip, o->parm.blit->flags);
 		o->parm.blit->pixmap->Release();
 		delete o->parm.blit;
+		break;
+	}
+	case gOpcode::gradient:
+	{
+		o->parm.gradient->area.moveBy(m_current_offset);
+		gRegion clip = m_current_clip & o->parm.gradient->area;
+		m_pixmap->drawGradient(clip, o->parm.gradient->area, o->parm.gradient->gradientColor, o->parm.gradient->gradientColor2, o->parm.gradient->orientation, o->parm.gradient->flag);
+		delete o->parm.gradient;
 		break;
 	}
 	case gOpcode::setPalette:
