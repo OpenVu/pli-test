@@ -5,6 +5,9 @@
 #include <lib/gdi/epng.h>
 #include <lib/base/wrappers.h>
 
+int eListbox::defaultItemRadius[2] = {0,0};
+int eListbox::defaultItemRadiusEdges[2] = {0,0};
+
 eListbox::eListbox(eWidget *parent) :
 	eWidget(parent), m_scrollbar_mode(showNever), m_scroll_mode(byPage), m_prev_scrollbar_page(-1),
 	m_content_changed(false), m_enabled_wrap_around(false), m_itemheight_set(false),
@@ -15,6 +18,13 @@ eListbox::eListbox(eWidget *parent) :
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
 //	setContent(new eListboxStringContent());
+	for (int x = 0; x < 2; x++)
+	{
+		if (eListbox::defaultItemRadius[x] && eListbox::defaultItemRadiusEdges[x])
+			setItemCornerRadiusInternal(eListbox::defaultItemRadius[x], eListbox::defaultItemRadiusEdges[x], x);
+		else
+			setItemCornerRadiusInternal(0, 0, x);
+	}
 
 	allowNativeKeys(true);
 }
@@ -645,6 +655,25 @@ int eListbox::event(int event, void *data, void *data2)
 		gRGB def_col = m_style.m_background_color;
 		int line = 0;
 
+		if (!isTransparent())
+		{
+			int cornerRadius = getCornerRadius();
+			int cornerRadiusEdges = getCornerRadiusEdges();
+			painter.clip(paint_region);
+			style->setStyle(painter, eWindowStyle::styleListboxNormal);
+			if (m_style.m_background_color_set)
+				painter.setBackgroundColor(m_style.m_background_color);
+			
+			if (cornerRadius && cornerRadiusEdges)
+			{
+				painter.setRadius(cornerRadius, cornerRadiusEdges);
+				painter.drawRectangle(eRect(ePoint(0, 0), size()));
+			}
+			else
+				painter.clear();
+			painter.clippop();
+		}
+
 		if (m_flex_mode != flexVertical)
 		{
 			if (!isTransparent())
@@ -1214,4 +1243,21 @@ struct eListboxStyle *eListbox::getLocalStyle(void)
 		/* transparency is set directly in the widget */
 	m_style.m_transparent_background = isTransparent();
 	return &m_style;
+}
+
+void eListbox::setItemCornerRadiusInternal(int radius, int edges, int index)
+{
+	m_style.m_itemCornerRadius[index] = radius;
+	m_style.m_itemCornerRadiusEdges[index] = edges;
+}
+void eListbox::setItemCornerRadius(int radius, int edges)
+{
+	for (int x = 0; x < 2; x++)
+	{
+		setItemCornerRadiusInternal(radius, edges, x);
+	}
+}
+void eListbox::setItemCornerRadiusSelected(int radius, int edges)
+{
+	setItemCornerRadiusInternal(radius, edges, 1);
 }
