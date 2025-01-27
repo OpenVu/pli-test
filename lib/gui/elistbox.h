@@ -112,9 +112,9 @@ public:
 
 	enum
 	{
-		flexVertical,
-		flexGrid,
-		flexHorizontal
+		LayoutVertical,
+		LayoutGrid,
+		LayoutHorizontal
 	};
 
 	enum {
@@ -161,7 +161,7 @@ public:
 		refresh
 	};
 
-	void setFlexMode(int mode);
+	void setLayoutMode(int mode);
 	void setScrollMode(int scroll);
 	void setItemWidth(int w);
 	void setSelectionHeight(int h);
