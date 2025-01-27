@@ -170,6 +170,7 @@ public:
 	int renderString(const char *string, int flags=0, int border=0);
 
 	void clear();
+	void setBlend(bool blend) { m_blend = blend; }
 
 	void blit(gDC &dc, const ePoint &offset, const gRGB &background, const gRGB &foreground, bool border = false);
 
