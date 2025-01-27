@@ -1,7 +1,7 @@
 import errno
 import xml.etree.ElementTree
 
-from enigma import addFont, eLabel, ePixmap, ePoint, eRect, eSize, eWindow, eWindowStyleManager, eWindowStyleSkinned, getDesktop, gFont, getFontFaces, gRGB, BT_ALPHATEST, BT_ALPHABLEND, eListboxPythonStringContent, eListboxPythonConfigContent
+from enigma import addFont, eLabel, ePixmap, ePoint, eRect, eSize, eWindow, eWindowStyleManager, eWindowStyleSkinned, GRADIENT_VERTICAL, eGradient, GRADIENT_HORIZONTAL, getDesktop, gFont, getFontFaces, gRGB, BT_ALPHATEST, BT_ALPHABLEND, eListboxPythonStringContent, eListboxPythonConfigContent
 from os.path import basename, dirname, isfile
 
 from Components.config import ConfigSubsection, ConfigText, config
@@ -502,6 +502,68 @@ class AttributeParser:
 # 			}[value])
 # 		except KeyError:
 # 			print("[Skin] Error: Invalid animationMode '%s'!  Must be one of 'disable', 'off', 'offshow', 'offhide', 'onshow' or 'onhide'." % value)
+
+	def gradientColor(self, value):
+		self.guiObject.setGradientColor(parseColor(value))
+
+	def gradientSecondColor(self, value):
+		self.guiObject.setGradientSecondColor(parseColor(value))
+
+	def gradientOrientation(self, value):
+		try:
+			self.guiObject.setGradientOrientation({
+				"horizontal": GRADIENT_HORIZONTAL,
+				"vertical": GRADIENT_VERTICAL,
+			}[value])
+		except KeyError:
+			raise AttribValueError("'horizontal', 'vertical'")
+
+	def gradientMode(self, value):
+		try:
+			self.guiObject.setGradientMode({
+				"dark_light": self.guiObject.DARK_TO_LIGHT,
+				"light_dark": self.guiObject.LIGHT_TO_DARK,
+				"centered": self.guiObject.DARK_TO_LIGHT_TO_DARK,
+				"reversed": self.guiObject.LIGHT_TO_DARK_TO_LIGHT,
+			}[value])
+		except KeyError:
+			raise AttribValueError("'dark_light', 'light_dark', 'centered', 'reversed'")
+
+	def gradientIntensity(self, value):
+		try:
+			self.guiObject.setGradientIntensity({
+				"light": self.guiObject.LIGHT,
+				"normal": self.guiObject.NORMAL,
+				"extended": self.guiObject.EXTENDED,
+			}[value])
+		except KeyError:
+			raise AttribValueError("'light', 'normal', 'extended'")
+
+	def gradientType(self, value):
+		try:
+			self.guiObject.setGradientType({
+				"normal": self.guiObject.GRADIENT_ONECOLOR,
+				"transparent": self.guiObject.GRADIENT_COLOR_TO_TRANSPARENT,
+				"color_to_color": self.guiObject.GRADIENT_COLOR_TO_COLOR,
+			}[value])
+		except KeyError:
+			raise AttribValueError("'normal', 'transparent', 'extended'")
+
+	def backgroundColorGradient(self, value):
+		start_color, end_color, direction = value.split(",")
+		self.guiObject.setBackgroundColorGradient(parseColor(start_color), parseColor(end_color), int(direction))
+
+	def backgroundColorGradientSelected(self, value):
+		start_color, end_color, direction = value.split(",")
+		try:
+			self.guiObject.setBackgroundColorGradientSelected(
+				parseColor(start_color), 
+				parseColor(end_color), 
+				{"vertical": GRADIENT_VERTICAL,
+					"horizontal": GRADIENT_HORIZONTAL
+				}[direction])
+		except:
+			raise AttribValueError("'start_color', 'end_color', 'direction[vertical, horizontal]'")
 
 	def title(self, value):
 		self.guiObject.setTitle(_(value))
@@ -1298,6 +1360,13 @@ def readSkin(screen, skin, names, desktop):
 		collectAttributes(w.skinAttributes, widget, context, skinPath, ignore=("name",))
 		screen.additionalWidgets.append(w)
 
+	def processGradient(widget, context):
+		w = additionalWidget()
+		w.widget = eGradient
+		w.skinAttributes = []
+		collectAttributes(w.skinAttributes, widget, context, skinPath, ignore=("name",))
+		screen.additionalWidgets.append(w)
+
 	def processScreen(widget, context):
 		for w in widget:
 			conditional = w.attrib.get("conditional")
@@ -1338,6 +1407,7 @@ def readSkin(screen, skin, names, desktop):
 		"applet": processApplet,
 		"eLabel": processLabel,
 		"ePixmap": processPixmap,
+		"eGradient": processGradient,
 		"panel": processPanel
 	}
 
