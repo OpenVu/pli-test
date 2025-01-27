@@ -521,14 +521,14 @@ class AttributeParser:
 	def itemHeight(self, value):
 		self.guiObject.setItemHeight(parseScale(value))
 
-	def flex(self, value):
+	def Listorientation(self, value):
 		try:
 			mode = {
-				'grid' : self.guiObject.flexGrid,
-				'horizontal' : self.guiObject.flexHorizontal,
-				'vertical':self.guiObject.flexVertical,
+				'grid' : self.guiObject.LayoutGrid,
+				'horizontal' : self.guiObject.LayoutHorizontal,
+				'vertical':self.guiObject.LayoutVertical,
 			}[value]
-			self.guiObject.setFlexMode(mode)
+			self.guiObject.setLayoutMode(mode)
 		except KeyError:
 			raise AttribValueError("'grid', 'horizontal', 'vertical', 'orHorizontal', 'list'")
 
