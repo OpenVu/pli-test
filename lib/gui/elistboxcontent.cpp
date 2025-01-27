@@ -1457,10 +1457,10 @@ void eListboxPythonMultiContent::setSelectionWidth(int width)
 		m_listbox->setSelectionWidth(width);
 }
 
-void eListboxPythonMultiContent::setFlexMode(int mode)
+void eListboxPythonMultiContent::setLayoutMode(int mode)
 {
 	if (m_listbox)
-		m_listbox->setFlexMode(mode);
+		m_listbox->setLayoutMode(mode);
 }
 
 void eListboxPythonMultiContent::setMargin(const ePoint &margin)
