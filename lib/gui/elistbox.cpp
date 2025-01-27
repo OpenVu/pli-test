@@ -9,7 +9,7 @@ eListbox::eListbox(eWidget *parent) :
 	eWidget(parent), m_scrollbar_mode(showNever), m_scroll_mode(byPage), m_prev_scrollbar_page(-1),
 	m_content_changed(false), m_enabled_wrap_around(false), m_itemheight_set(false),
 	m_itemwidth_set(false), m_selectionheight_set(false), m_selectionwidth_set(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20), m_scrollbar_border_width(1), m_scrollbar_offset(5),
-	m_top(0), m_selected(0), m_flex_mode(flexVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
+	m_top(0), m_selected(0), m_layout_mode(LayoutVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
 	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_first_selectable_item(-1), m_last_selectable_item(-1), m_center_list(true), m_scrollbar(nullptr)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
@@ -51,12 +51,12 @@ void eListbox::setScrollbarMode(int mode)
 	}
 }
 
-void eListbox::setFlexMode(int mode)
+void eListbox::setLayoutMode(int mode)
 {
 	if (mode <= 2)
 	{
-		int old_mode = m_flex_mode;
-		m_flex_mode = mode;
+		int old_mode = m_layout_mode;
+		m_layout_mode = mode;
 		if (old_mode != mode)
 		{
 			recalcSize();
@@ -155,8 +155,8 @@ void eListbox::moveSelection(long dir)
 		dir -= 100;
 	}
 
-	//dir = (((dir == pageUp) && (m_flex_mode == flexVertical)) || ((dir == moveUp) && (m_flex_mode == flexHorizontal))) ? prevPage : 
-      	//(((dir == pageDown) && (m_flex_mode == flexVertical)) ||  ((dir == moveDown) && (m_flex_mode == flexHorizontal))) ? nextPage : dir;
+	//dir = (((dir == pageUp) && (m_layout_mode == LayoutVertical)) || ((dir == moveUp) && (m_layout_mode == LayoutHorizontal))) ? prevPage : 
+      	//(((dir == pageDown) && (m_layout_mode == LayoutVertical)) ||  ((dir == moveDown) && (m_layout_mode == LayoutHorizontal))) ? nextPage : dir;
 
 	switch (dir)
 	{
@@ -167,7 +167,7 @@ void eListbox::moveSelection(long dir)
 	case moveUp:
 		do
 		{
-			m_content->cursorMove((m_flex_mode == flexGrid && dir == moveUp) ? -m_columns : -1);
+			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveUp) ? -m_columns : -1);
 			newsel = m_content->cursorGet();
 			if (newsel == prevsel)
 			{ // cursorMove reached top and left cursor position the same. Must wrap around ?
@@ -200,19 +200,19 @@ void eListbox::moveSelection(long dir)
 	case moveDown:
 		do
 		{
-			m_content->cursorMove((m_flex_mode == flexGrid && dir == moveDown) ? m_columns : 1);
+			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
 			if (!m_content->cursorValid())
 			{ // cursorMove reached end and left cursor position past the list. Must wrap around ?
 				if (m_enabled_wrap_around)
 				{
-					if (oldsel + 1 < m_content->size() && m_flex_mode == flexGrid && dir == moveDown)
+					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
 						m_content->cursorMove(-1);
 					else
 						m_content->cursorHome();
 				}
 				else
 				{
-					if (oldsel + 1 < m_content->size() && m_flex_mode == flexGrid && dir == moveDown)
+					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
 						m_content->cursorMove(-1);
 					else
 						m_content->cursorSet(oldsel);
@@ -311,7 +311,7 @@ void eListbox::moveSelection(long dir)
 	m_top = m_selected - (m_selected % m_items_per_page);
 
 	/*  new scollmode by line if not on the first page */
-	if (m_scroll_mode == byLine && m_content->size() > m_items_per_page && m_flex_mode != flexGrid)
+	if (m_scroll_mode == byLine && m_content->size() > m_items_per_page && m_layout_mode != LayoutGrid)
 	{
 
 		int oldline = m_content->cursorRestoreLine();
@@ -320,7 +320,7 @@ void eListbox::moveSelection(long dir)
 
 		bool jumpBottom = (dir == moveEnd);
 
-		// if(dir == pageDown && m_selected > max && m_flex_mode == flexVertical_list) {
+		// if(dir == pageDown && m_selected > max && m_layout_mode == LayoutVertical_list) {
 		// 	jumpBottom = true;
 		// }
 
@@ -434,13 +434,13 @@ void eListbox::moveSelection(long dir)
 		int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
 		int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
 		int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
-		if (m_flex_mode == flexHorizontal)
+		if (m_layout_mode == LayoutHorizontal)
 		{
 			gRegion inv = eRect((((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
 			inv |= eRect((((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
 			invalidate(inv);
 		}
-		else if (m_flex_mode == flexGrid)
+		else if (m_layout_mode == LayoutGrid)
 		{
 			shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionheight + 40) - m_selectionheight) / 2) : 0;
 			gRegion inv = eRect((((m_itemwidth + newmargin.x()) * ((m_selected - m_top) % m_columns)) - shadow_offset_x) + xoffset, (((m_itemheight + newmargin.y()) * ((m_selected - m_top) / m_columns)) - shadow_offset_y) + yoffset, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
@@ -493,7 +493,7 @@ ePoint eListbox::getSelectionAbsolutePosition()
 		return abspos;
 
 	ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-	if (m_flex_mode == flexHorizontal || m_flex_mode == flexGrid)
+	if (m_layout_mode == LayoutHorizontal || m_layout_mode == LayoutGrid)
 	{
 		int posx_sel = (m_itemwidth + margin.x()) * (m_selected % m_columns);
 		int posy_sel = (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns);
@@ -521,7 +521,7 @@ void eListbox::updateScrollBar()
 
 		if (entries > m_items_per_page || m_scrollbar_mode == showAlways)
 		{
-			if (m_flex_mode == flexVertical)
+			if (m_layout_mode == LayoutVertical)
 			{
 				m_scrollbar->setOrientation(eSlider::orVertical);
 				m_scrollbar->move(ePoint(width - m_scrollbar_width, 0));
@@ -529,14 +529,14 @@ void eListbox::updateScrollBar()
 				m_content->setSize(eSize(width - m_scrollbar_width - m_scrollbar_offset, m_itemheight));
 				m_content->setSelectionSize(eSize(width - m_scrollbar_width - m_scrollbar_offset, m_itemheight));
 			}
-			if (m_flex_mode == flexHorizontal)
+			if (m_layout_mode == LayoutHorizontal)
 			{
 				int posx = (m_selectionwidth > m_itemwidth) ? ((m_selectionwidth - m_itemwidth) / 2) : 0;
 				m_scrollbar->setOrientation(eSlider::orHorizontal);
 				m_scrollbar->move(ePoint(posx + xoffset, m_selectionheight + m_margin.y() + yoffset));
 				m_scrollbar->resize(eSize(((m_itemwidth + m_margin.x()) * m_columns) - m_margin.x(), m_scrollbar_width));
 			}
-			if (m_flex_mode == flexGrid)
+			if (m_layout_mode == LayoutGrid)
 			{
 				int posx = (m_selectionwidth > m_itemwidth) ? ((m_selectionwidth - m_itemwidth) / 2) : 0;
 				int posy = (m_selectionheight > m_itemheight) ? ((m_selectionheight - m_itemheight) / 2) : 0;
@@ -550,7 +550,7 @@ void eListbox::updateScrollBar()
 		}
 		else
 		{
-			if (m_flex_mode == flexVertical)
+			if (m_layout_mode == LayoutVertical)
 			{
 				m_content->setSize(eSize(width, m_itemheight));
 				m_content->setSelectionSize(eSize(width, m_itemheight));
@@ -564,13 +564,13 @@ void eListbox::updateScrollBar()
 	if (m_items_per_page && entries && scrollbarvisible)
 	{
 
-		if(m_scroll_mode == byLine && m_flex_mode != flexGrid) {
+		if(m_scroll_mode == byLine && m_layout_mode != LayoutGrid) {
 
 			if(m_prev_scrollbar_page != m_selected) {
 				m_prev_scrollbar_page = m_selected;
 
 				int start = 0;
-				int range = (m_flex_mode == flexVertical) ? size().height() - (m_scrollbar_border_width * 2) : ((m_itemwidth + m_margin.x()) * m_columns) - m_margin.x();
+				int range = (m_layout_mode == LayoutVertical) ? size().height() - (m_scrollbar_border_width * 2) : ((m_itemwidth + m_margin.x()) * m_columns) - m_margin.x();
 				int end = range;
 				// calculate thumb only if needed
 				if (entries > 1 && entries > m_items_per_page)
@@ -645,7 +645,7 @@ int eListbox::event(int event, void *data, void *data2)
 		gRGB def_col = m_style.m_background_color;
 		int line = 0;
 
-		if (m_flex_mode != flexVertical)
+		if (m_layout_mode != LayoutVertical)
 		{
 			if (!isTransparent())
 			{
@@ -662,7 +662,7 @@ int eListbox::event(int event, void *data, void *data2)
 			}
 		}
 
-		for (int posx = 0, posy = 0, i = 0; (m_flex_mode == flexVertical) ? i <= m_items_per_page : i < m_items_per_page; posx += m_itemwidth + m_margin.x(), ++i)
+		for (int posx = 0, posy = 0, i = 0; (m_layout_mode == LayoutVertical) ? i <= m_items_per_page : i < m_items_per_page; posx += m_itemwidth + m_margin.x(), ++i)
 		{
 			if (m_style.m_background_color_set && m_style.m_background_color_rows_set)
 			{
@@ -684,7 +684,7 @@ int eListbox::event(int event, void *data, void *data2)
 				last_col = m_style.m_background_color;
 			}
 
-			if (m_flex_mode == flexGrid && i > 0)
+			if (m_layout_mode == LayoutGrid && i > 0)
 			{
 				if (i % m_columns == 0)
 				{
@@ -692,7 +692,7 @@ int eListbox::event(int event, void *data, void *data2)
 					posx = 0;
 				}
 			}
-			if (m_flex_mode == flexVertical)
+			if (m_layout_mode == LayoutVertical)
 			{
 				posx = 0;
 				if (i > 0)
@@ -708,12 +708,12 @@ int eListbox::event(int event, void *data, void *data2)
 
 			if (!entry_clip_rect.empty())
 			{
-				if (m_flex_mode != flexVertical && m_content->cursorValid())
+				if (m_layout_mode != LayoutVertical && m_content->cursorValid())
 				{
 					if (i != (m_selected - m_top) || !m_selection_enabled)
 						m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), 0);
 				}
-				else if (m_flex_mode == flexVertical)
+				else if (m_layout_mode == LayoutVertical)
 					m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), sel);
 			}
 
@@ -722,14 +722,14 @@ int eListbox::event(int event, void *data, void *data2)
 		}
 		m_content->cursorSaveLine(line);
 		m_content->cursorRestore();
-		if (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled && m_flex_mode != flexVertical)
+		if (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled && m_layout_mode != LayoutVertical)
 		{
 			ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-			int posx_sel = (m_flex_mode == flexGrid) ? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns) : (m_itemwidth + margin.x()) * (m_selected - m_top);
-			int posy_sel = (m_flex_mode == flexGrid) ? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns) : 0;
+			int posx_sel = (m_layout_mode == LayoutGrid) ? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns) : (m_itemwidth + margin.x()) * (m_selected - m_top);
+			int posy_sel = (m_layout_mode == LayoutGrid) ? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns) : 0;
 			if (m_content)
 			{
-				if (m_flex_mode == flexVertical)
+				if (m_layout_mode == LayoutVertical)
 				{
 					posx_sel = 0;
 					posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
@@ -751,7 +751,7 @@ int eListbox::event(int event, void *data, void *data2)
 		}
 
 		// clear/repaint empty/unused space between scrollbar and listboxentrys
-		if (m_scrollbar && m_scrollbar->isVisible() && !isTransparent() && m_flex_mode == flexVertical)
+		if (m_scrollbar && m_scrollbar->isVisible() && !isTransparent() && m_layout_mode == LayoutVertical)
 		{
 			style->setStyle(painter, eWindowStyle::styleListboxNormal);
 			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset, 0), eSize(m_scrollbar_offset, m_scrollbar->size().height())));
@@ -809,45 +809,45 @@ void eListbox::recalcSize()
 			int diffx = (m_selectionwidth > m_itemwidth) ? (m_selectionwidth - m_itemwidth) : 0;
 			int diffy = (m_selectionheight > m_itemheight) ? (m_selectionheight - m_itemheight) : 0;
 
-			if (m_flex_mode == flexGrid || m_flex_mode == flexHorizontal)
+			if (m_layout_mode == LayoutGrid || m_layout_mode == LayoutHorizontal)
 			{
 				m_columns = (!m_columns_set || (m_columns > size().width() / (m_itemwidth + m_margin.x()))) ? size().width() / (m_itemwidth + m_margin.x()) : m_columns;
-				if (m_flex_mode == flexGrid)
+				if (m_layout_mode == LayoutGrid)
 				{
 					m_rows = (!m_rows_set || (m_rows > size().height() / (m_itemheight + m_margin.y()))) ? size().height() / (m_itemheight + m_margin.y()) : m_rows;
 					if (m_rows < 2)
-						m_flex_mode = flexHorizontal;
+						m_layout_mode = LayoutHorizontal;
 				}
 				if (m_center_list)
 				{
 					if ((((size().width() - ((m_itemwidth * m_columns) + (m_margin.x() * (m_columns - 1)))) - diffx) / 2) > 0)
 						xoffset = (((size().width() - ((m_itemwidth * m_columns) + (m_margin.x() * (m_columns - 1)))) - diffx) / 2);
-					if ((((size().height() - ((m_itemheight * m_rows) + (m_margin.y() * (m_rows - 1)))) - diffy) / 2) > 0 && m_flex_mode == flexGrid)
+					if ((((size().height() - ((m_itemheight * m_rows) + (m_margin.y() * (m_rows - 1)))) - diffy) / 2) > 0 && m_layout_mode == LayoutGrid)
 						yoffset = (((size().height() - ((m_itemheight * m_rows) + (m_margin.y() * (m_rows - 1)))) - diffy) / 2);
-					if ((((size().height() - m_itemheight) - diffy) / 2) > 0 && m_flex_mode == flexHorizontal)
+					if ((((size().height() - m_itemheight) - diffy) / 2) > 0 && m_layout_mode == LayoutHorizontal)
 						yoffset = (((size().height() - m_itemheight) - diffy) / 2);
 				}
 			}
 
-			if (m_flex_mode == flexVertical)
+			if (m_layout_mode == LayoutVertical)
 			{
 				m_itemwidth = m_selectionwidth = size().width();
 				m_selectionheight = m_itemheight;
 				m_columns = size().height() / m_itemheight;
 			}
 
-			m_items_per_page = (m_flex_mode == flexGrid) ? m_columns * m_rows : m_columns;
+			m_items_per_page = (m_layout_mode == LayoutGrid) ? m_columns * m_rows : m_columns;
 			if (m_items_per_page < 0) /* TODO: whyever - our size could be invalid, or itemheigh could be wrongly specified. */
 				m_items_per_page = 0;
 
 			if (m_scrollbar_mode == showAlways || (m_content->size() > m_items_per_page && m_scrollbar_mode == showOnDemand))
 			{
-				if (m_flex_mode == flexGrid)
+				if (m_layout_mode == LayoutGrid)
 				{
 					if ((xoffset - m_scrollbar_width) > 0 && m_center_list)
 						xoffset -= m_scrollbar_width;
 				}
-				if (m_flex_mode == flexHorizontal)
+				if (m_layout_mode == LayoutHorizontal)
 				{
 					if ((yoffset - m_scrollbar_width) > 0 && m_center_list)
 						yoffset -= m_scrollbar_width;
@@ -938,7 +938,7 @@ void eListbox::setMargin(const ePoint &margin)
 
 void eListbox::setShadow(int shadow)
 {
-	if (shadow == 1 && m_flex_mode != flexVertical && !m_style.m_shadow_set)
+	if (shadow == 1 && m_layout_mode != LayoutVertical && !m_style.m_shadow_set)
 	{
 		if (fileExists("/usr/share/enigma2/skin_default/shadow.png"))
 		{
@@ -1018,10 +1018,10 @@ void eListbox::entryChanged(int index)
 	if ((m_top <= index) && (index < (m_top + m_items_per_page)))
 	{
 		ePoint margin = (index > 0) ? m_margin : ePoint(0, 0);
-		if (m_flex_mode == flexHorizontal || m_flex_mode == flexGrid)
+		if (m_layout_mode == LayoutHorizontal || m_layout_mode == LayoutGrid)
 		{
-			int posx_sel = (m_flex_mode == flexGrid) ? (m_itemwidth + margin.x()) * ((index - m_top) % m_columns) : (m_itemwidth + margin.x()) * (index - m_top);
-			int posy_sel = (m_flex_mode == flexGrid) ? (m_itemheight + margin.y()) * ((index - m_top) / m_columns) : 0;
+			int posx_sel = (m_layout_mode == LayoutGrid) ? (m_itemwidth + margin.x()) * ((index - m_top) % m_columns) : (m_itemwidth + margin.x()) * (index - m_top);
+			int posy_sel = (m_layout_mode == LayoutGrid) ? (m_itemheight + margin.y()) * ((index - m_top) / m_columns) : 0;
 			gRegion inv = eRect(posx_sel + xoffset, posy_sel + yoffset, m_selectionwidth, m_selectionheight);
 			invalidate(inv);
 		}
