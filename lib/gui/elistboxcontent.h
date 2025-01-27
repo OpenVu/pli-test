@@ -98,7 +98,7 @@ public:
 	void setItemWidth(int width);
 	void setSelectionHeight(int height);
 	void setSelectionWidth(int width);
-	void setFlexMode(int mode);
+	void setLayoutMode(int mode);
 	void setMargin(const ePoint &margin);
 	void setShadow(int shadow);
 	void setOverlay(int overlay);
