@@ -220,8 +220,8 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 				}
 			}
 		}
-		//else if (local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
-			//painter.drawGradient(eRect(offset, m_itemsize), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
+		else if (local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
+			painter.drawGradient(eRect(offset, m_itemsize), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
 		else
 			painter.clear();
 	}
@@ -239,8 +239,8 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 				}
 			}
 		}
-		//else if (local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
-			//painter.drawGradient(eRect(offset, m_itemsize), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
+		else if (local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
+			painter.drawGradient(eRect(offset, m_itemsize), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
 		else if (selected && !local_style->m_selection)
 			painter.clear();
 	}
@@ -261,7 +261,9 @@ void eListboxPythonStringContent::paint(gPainter &painter, eWindowStyle &style, 
 
 		if (selected && local_style && local_style->m_selection)
 			painter.blit(local_style->m_selection, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_selection->size().height()) / 2), eRect(), gPainter::BT_ALPHATEST);
-
+		else if (selected && local_style->m_background_color_gradient_selected_set && !local_style->m_selection)
+			painter.drawGradient(eRect(offset, m_selectionsize), local_style->m_background_color_gradient_selected_start, local_style->m_background_color_gradient_selected_stop, local_style->m_background_color_gradient_selected_direction);
+		
 		if (item == Py_None)
 		{
 				/* seperator */
@@ -437,13 +439,17 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 		/* blit background picture, if available (otherwise, clear only) */
 		if (local_style && local_style->m_background && cursorValid)
 			painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_background->size().height()) / 2), eRect(), 0);
+		else if (local_style && local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
+			painter.drawGradient(itemrect, local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
 		else
 			painter.clear();
 	} else
 	{
 		if (local_style->m_background && cursorValid)
 			painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_background->size().height()) / 2), eRect(), gPainter::BT_ALPHATEST);
-		else if (selected && !local_style->m_selection)
+		else if (local_style && local_style->m_background_color_gradient_set && !local_style->m_background && cursorValid)
+			painter.drawGradient(itemrect, local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
+		else if (selected && !local_style->m_selection && !local_style->m_background_color_gradient_selected_set)
 			painter.clear();
 	}
 
@@ -456,13 +462,15 @@ void eListboxPythonConfigContent::paint(gPainter &painter, eWindowStyle &style, 
 
 		if (selected && local_style && local_style->m_selection)
 			painter.blit(local_style->m_selection, ePoint(offset.x(), offset.y() + (m_itemsize.height() - local_style->m_selection->size().height()) / 2), eRect(), gPainter::BT_ALPHATEST);
+		else if (selected && local_style->m_background_color_gradient_selected_set && !local_style->m_selection)
+			painter.drawGradient(itemrect, local_style->m_background_color_gradient_selected_start, local_style->m_background_color_gradient_selected_stop, local_style->m_background_color_gradient_selected_direction);
+		
+		/* the first tuple element is a string for the left side.
+		   the second one will be called, and the result shall be an tuple.
 
-			/* the first tuple element is a string for the left side.
-			   the second one will be called, and the result shall be an tuple.
-
-			   of this tuple,
-			   the first one is the type (string).
-			   the second one is the value. */
+		   of this tuple,
+		   the first one is the type (string).
+		   the second one is the value. */
 		if (PyTuple_Check(item))
 		{
 				/* handle left part. get item from tuple, convert to string, display. */
@@ -701,6 +709,11 @@ static void clearRegionHelper(gPainter &painter, eListboxStyle *local_style, con
 	{
 		if (local_style->m_background_color_set)
 			painter.setBackgroundColor(local_style->m_background_color);
+		if (local_style->m_background_color_gradient_set && cursorValid)
+		{
+			painter.drawGradient(eRect(offset, size), local_style->m_background_color_gradient_start, local_style->m_background_color_gradient_stop, local_style->m_background_color_gradient_direction);
+			return;
+		}
 		if (local_style->m_background && cursorValid)
 		{
 			if (local_style->m_transparent_background)
@@ -733,6 +746,11 @@ static void clearRegionSelectedHelper(gPainter &painter, eListboxStyle *local_st
 				painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (size.height() - local_style->m_background->size().height()) / 2), eRect(), gPainter::BT_ALPHATEST);
 			else
 				painter.blit(local_style->m_background, ePoint(offset.x(), offset.y() + (size.height() - local_style->m_background->size().height()) / 2), eRect(), 0);
+			return;
+		}
+		else if (local_style->m_background_color_gradient_selected_set && cursorValid)
+		{
+			painter.drawGradient(eRect(offset, size), local_style->m_background_color_gradient_selected_start, local_style->m_background_color_gradient_selected_stop, local_style->m_background_color_gradient_selected_direction);
 			return;
 		}
 	}
@@ -1277,6 +1295,86 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 				painter.clippop();
 				break;
 			}
+			case TYPE_LINEAR_GRADIENT_ALPHABLEND:
+			case TYPE_LINEAR_GRADIENT:
+			{
+				ePyObject px = PyTuple_GET_ITEM(item, 1),
+						py = PyTuple_GET_ITEM(item, 2), 
+						pwidth = PyTuple_GET_ITEM(item, 3),
+						pheight = PyTuple_GET_ITEM(item, 4), 
+						ppdirection = PyTuple_GET_ITEM(item, 5),
+						pbackColor, pbackColorSelected, ppstart_color, ppend_color, ppstart_color_sel, ppend_color_sel;
+
+				if (!(px && py && pwidth && pheight && ppdirection))
+				{
+					eDebug("[eListboxPythonMultiContent] tuple too small (must be (TYPE_LINEAR_GRADIENT, x, y, width, height, direction, [, start_color, end_color, start_color_sel, end_color_sel] ))");
+					goto error_out;
+				}
+
+				if (size > 6)
+					ppstart_color = lookupColor(PyTuple_GET_ITEM(item, 6), data);
+
+				if (size > 7)
+					ppend_color = lookupColor(PyTuple_GET_ITEM(item, 7), data);
+
+				if (size > 8)
+					ppstart_color_sel = lookupColor(PyTuple_GET_ITEM(item, 8), data);
+
+				if (size > 9)
+					ppend_color_sel = lookupColor(PyTuple_GET_ITEM(item, 9), data);
+
+				// if (!(ppstart_color && ppend_color && ppstart_color_sel && ppend_color_sel))
+				// 	continue;
+
+				// if (ppstart_color)
+				// 	unsigned int ppstart_color = PyInt_AsUnsignedLongMask(ppstart_color);
+				// if (ppend_color)
+				// 	unsigned int ppend_color = PyInt_AsUnsignedLongMask(ppend_color);
+				// if (ppstart_color_sel)
+				// 	unsigned int ppstart_color_sel = PyInt_AsUnsignedLongMask(ppstart_color_sel);
+				// if (ppend_color_sel)
+				// 	unsigned int ppend_color_sel = PyInt_AsUnsignedLongMask(ppend_color_sel);
+
+				int x = PyFloat_Check(px) ? (int)PyFloat_AsDouble(px) : PyLong_AsLong(px);
+				x += offs.x();
+				int y = PyFloat_Check(py) ? (int)PyFloat_AsDouble(py) : PyLong_AsLong(py);
+				y += offs.y();
+				int width = PyFloat_Check(pwidth) ? (int)PyFloat_AsDouble(pwidth) : PyLong_AsLong(pwidth); 
+				int height = PyFloat_Check(pheight) ? (int)PyFloat_AsDouble(pheight) : PyLong_AsLong(pheight);
+				int direction = PyInt_AsLong(ppdirection);
+
+				if (width == 0 || width < 0)
+					width = (selected) ? m_selectionsize.width() + width : m_itemsize.width() + width;
+				if (height == 0 || height < 0)
+					height = (selected) ? m_selectionsize.height() + height : m_itemsize.height() + height;
+
+				eRect rect(x, y, width, height);
+				painter.clip(rect);
+				{
+					gRegion rc(rect);
+					bool mustClear = (selected && pbackColorSelected) || (!selected && pbackColor);
+					clearRegion(painter, style, local_style, ePyObject(), ePyObject(), pbackColor, pbackColorSelected, selected, rc, sel_clip, offs, (selected) ? m_selectionsize : m_itemsize, cursorValid, mustClear);
+				}
+
+				int flag = (type == TYPE_LINEAR_GRADIENT_ALPHABLEND) ? gPainter::BT_ALPHABLEND : 0;
+
+				if (!selected && ppstart_color && ppend_color)
+				{
+					unsigned int color = PyInt_AsUnsignedLongMask(ppstart_color);
+					unsigned int color1 = PyInt_AsUnsignedLongMask(ppend_color);
+					painter.drawGradient(rect, gRGB(color), gRGB(color1), direction, flag);
+				}
+				else if (selected && ppstart_color_sel && ppend_color_sel)
+				{
+					unsigned int color = PyInt_AsUnsignedLongMask(ppstart_color_sel);
+					unsigned int color1 = PyInt_AsUnsignedLongMask(ppend_color_sel);
+					painter.drawGradient(rect, gRGB(color), gRGB(color1), direction, flag);
+				}
+
+				painter.clippop();
+
+				break;
+			}	
 			case TYPE_PIXMAP_ALPHABLEND:
 			case TYPE_PIXMAP_ALPHATEST:
 			case TYPE_PIXMAP: // pixmap
