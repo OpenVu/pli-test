@@ -24,17 +24,17 @@ eWidget::eWidget(eWidget *parent): m_animation(this), m_parent(parent ? parent->
 	m_current_focus = 0;
 	m_focus_owner = 0;
 	m_notify_child_on_position_change = 1;
-	m_radius = 0;  // Add this line
+	//m_radius = 0;  // Add this line
 }
 
-void eWidget::setCornerRadius(int radius)
-{
-    if (m_radius != radius)
-    {
-        m_radius = radius;
-        invalidate();
-    }
-}
+//void eWidget::setCornerRadius(int radius)
+//{
+    //if (m_radius != radius)
+    //{
+        //m_radius = radius;
+        //invalidate();
+    //}
+//}
 
 void eWidget::move(ePoint pos)
 {
