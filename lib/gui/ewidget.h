@@ -98,7 +98,7 @@ private:
 	int m_lowered;
 	int m_notify_child_on_position_change;
 
-	int m_radius;
+	//int m_radius;
 protected:
 	void mayKillFocus();
 public:
