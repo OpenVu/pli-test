@@ -56,6 +56,7 @@ is usually caused by not marking PSignals as immutable.
 #include <lib/gdi/grc.h>
 #include <lib/gdi/gmaindc.h>
 #include <lib/gui/ewidget.h>
+#include <lib/gui/egradient.h>
 #include <lib/gui/elabel.h>
 #include <lib/gui/einput.h>
 #include <lib/gui/einputstring.h>
@@ -208,6 +209,7 @@ typedef long time_t;
 %include <lib/gdi/erect.h>
 %include <lib/gdi/esize.h>
 %include <lib/gui/ewidget.h>
+%include <lib/gui/egradient.h>
 %include <lib/gui/elabel.h>
 %include <lib/gui/einput.h>
 %include <lib/gui/einputstring.h>
