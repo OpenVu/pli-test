@@ -28,7 +28,7 @@ public:
 
 	void setForegroundColor(const gRGB &col);
 	void setShadowColor(const gRGB &col);
-	//void setBackgroundColor(const gRGB &col);
+	void setBackgroundColor(const gRGB &col);
 	void setShadowOffset(const ePoint &offset);
 	void setBorderColor(const gRGB &col);
 	void setBorderWidth(int size);
