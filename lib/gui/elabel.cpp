@@ -16,7 +16,7 @@ eLabel::eLabel(eWidget *parent, int markedPos): eWidget(parent)
 
 	m_have_foreground_color = 0;
 	m_have_shadow_color = 0;
-	//m_have_background_color = 0;
+	m_have_background_color = 0;
 
 	m_nowrap = 0;
 	m_border_size = 0;
@@ -89,36 +89,12 @@ int eLabel::event(int event, void *data, void *data2)
 			painter.setFont(m_font);
 			style->setStyle(painter, eWindowStyle::styleLabel);
 
-			if (haveBackgroundColor())  // Always draw background first
-			{
-			    painter.setBackgroundColor(m_background_color);
-			    if (m_radius > 0)
-			    	{
-					int m_flags = gPainter::BT_ALPHABLEND;
-					if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
-					{
-				    		drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
-				    		m_last_color = m_background_color;
-					}
-			
-					if (m_pixmap)
-					{
-				    		painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
-					}
-			    	}
-			    	else
-			    	{
-					painter.clear();
-			    	}
-			}
-
-
 			if (m_have_shadow_color)
 				painter.setForegroundColor(m_shadow_color);
 			else if (m_have_foreground_color)
 				painter.setForegroundColor(m_foreground_color);
-			//else if (haveBackgroundColor())
-				//painter.setBackgroundColor(m_background_color);
+			else if (m_have_background_color)
+				painter.setBackgroundColor(m_background_color);
 
 			int flags = 0;
 			if (m_valign == alignTop)
@@ -139,6 +115,23 @@ int eLabel::event(int event, void *data, void *data2)
 
 			if (!m_nowrap)
 				flags |= gPainter::RT_WRAP;
+
+			if(m_radius > 0 && m_have_background_color)
+			{
+				int m_flags = 0;
+				if (size().width() <= 500 && size().height() <= 500) m_flags = gPainter::BT_ALPHABLEND;
+				else m_flags = gPainter::BT_ALPHATEST;
+
+				if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
+				{
+					drawRect(m_pixmap ,size() ,m_background_color ,m_radius, m_flags);
+					m_last_color = m_background_color;
+				}
+				if (m_pixmap)
+				{
+					painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
+				}
+			}
 
 				/* if we don't have shadow, m_shadow_offset will be 0,0 */
 			painter.renderText(eRect(-m_shadow_offset.x(), -m_shadow_offset.y(), size().width(), size().height()), m_text, flags, m_border_color, m_border_size);
@@ -226,10 +219,10 @@ void eLabel::setShadowColor(const gRGB &col)
 
 void eLabel::setBackgroundColor(const gRGB &col)
 {
-    if ((!haveBackgroundColor) || (m_background_color != col))
+    if ((!m_have_background_color) || (m_background_color != col))
     {
         m_background_color = col;
-        haveBackgroundColor = 1;
+        m_have_background_color = 1;
         m_pixmap = 0;  // Force redrawing of pixmap
         invalidate();
     }
