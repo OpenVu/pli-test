@@ -89,6 +89,33 @@ int eLabel::event(int event, void *data, void *data2)
 			painter.setFont(m_font);
 			style->setStyle(painter, eWindowStyle::styleLabel);
 
+			if (haveBackgroundColor())  // Always draw background first
+			{
+				if (m_radius > 0)  // With corner radius
+				{
+					int m_flags = 0;
+					if (size().width() <= 500 && size().height() <= 500) 
+						m_flags = gPainter::BT_ALPHABLEND;
+					else 
+						m_flags = gPainter::BT_ALPHATEST;
+		
+					if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
+					{
+						drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
+						m_last_color = m_background_color;
+					}
+					if (m_pixmap)
+					{
+						painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
+					}
+				}
+				else  // Without corner radius
+				{
+					painter.setBackgroundColor(m_background_color);
+					painter.clear();
+				}
+			}
+
 			if (m_have_shadow_color)
 				painter.setForegroundColor(m_shadow_color);
 			else if (m_have_foreground_color)
@@ -115,28 +142,6 @@ int eLabel::event(int event, void *data, void *data2)
 
 			if (!m_nowrap)
 				flags |= gPainter::RT_WRAP;
-
-			if(m_radius > 0 && haveBackgroundColor())
-			{
-				int m_flags = 0;
-				if (size().width() <= 500 && size().height() <= 500) m_flags = gPainter::BT_ALPHABLEND;
-				else m_flags = gPainter::BT_ALPHATEST;
-	
-				if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
-				{
-					drawRect(m_pixmap ,size() ,m_background_color ,m_radius, m_flags);
-					m_last_color = m_background_color;
-				}
-				if (m_pixmap)
-				{
-					painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
-				}
-			}
-			else if (haveBackgroundColor())  
-			{
-				painter.setBackgroundColor(m_background_color);
-				painter.clear();
-			}
 
 				/* if we don't have shadow, m_shadow_offset will be 0,0 */
 			painter.renderText(eRect(-m_shadow_offset.x(), -m_shadow_offset.y(), size().width(), size().height()), m_text, flags, m_border_color, m_border_size);
