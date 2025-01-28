@@ -1,4 +1,4 @@
-from enigma import RT_HALIGN_LEFT, RT_VALIGN_TOP, eListboxPythonMultiContent
+from enigma import RT_HALIGN_LEFT, RT_VALIGN_TOP, GRADIENT_VERTICAL, eListboxPythonMultiContent
 
 from skin import parseColor
 from Tools.Directories import SCOPE_CURRENT_SKIN, resolveFilename
@@ -26,6 +26,8 @@ def __resolvePixmap(pixmap):
 
 
 def MultiContentTemplateColor(n):
+	if isinstance(n, str):
+		return parseColor(n).argb()
 	return 0xff000000 | n
 
 
@@ -51,3 +53,9 @@ def MultiContentEntryProgress(pos=(0, 0), size=(0, 0), percent=None, borderWidth
 
 def MultiContentEntryProgressPixmap(pos=(0, 0), size=(0, 0), percent=None, pixmap=None, borderWidth=None, foreColor=None, foreColorSelected=None, backColor=None, backColorSelected=None):
 	return eListboxPythonMultiContent.TYPE_PROGRESS_PIXMAP, pos[0], pos[1], size[0], size[1], percent, __resolvePixmap(pixmap), borderWidth, __resolveColor(foreColor), __resolveColor(foreColorSelected), __resolveColor(backColor), __resolveColor(backColorSelected)
+
+def MultiContentEntryLinearGradient(pos=(0, 0), size=(0, 0), direction=GRADIENT_VERTICAL, startColor=None, endColor=None, startColor_sel=None, endColor_sel=None):
+	return eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT, int(pos[0]), int(pos[1]), int(size[0]), int(size[1]), direction, __resolveColor(startColor), __resolveColor(endColor), __resolveColor(startColor_sel), __resolveColor(endColor_sel)
+
+def MultiContentEntryLinearGradientAlphaBlend(pos=(0, 0), size=(0, 0), direction=GRADIENT_VERTICAL, startColor=None, endColor=None, startColor_sel=None, endColor_sel=None):
+	return eListboxPythonMultiContent.TYPE_LINEAR_GRADIENT_ALPHABLEND, int(pos[0]), int(pos[1]), int(size[0]), int(size[1]), direction, __resolveColor(startColor), __resolveColor(endColor), __resolveColor(startColor_sel), __resolveColor(endColor_sel)
