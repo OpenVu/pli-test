@@ -3,6 +3,7 @@
 #include <lib/gdi/gpixmap.h>
 #include <lib/gdi/region.h>
 #include <lib/gdi/accel.h>
+#include <lib/gdi/color.h>
 #include <byteswap.h>
 
 #ifdef __GLIBC__
