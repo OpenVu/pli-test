@@ -93,8 +93,6 @@ int eLabel::event(int event, void *data, void *data2)
 				painter.setForegroundColor(m_shadow_color);
 			else if (m_have_foreground_color)
 				painter.setForegroundColor(m_foreground_color);
-			//else if (m_have_background_color)
-				//painter.setBackgroundColor(m_background_color);
 			else if (haveBackgroundColor())
 				painter.setBackgroundColor(m_background_color);
 
@@ -133,6 +131,11 @@ int eLabel::event(int event, void *data, void *data2)
 				{
 					painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
 				}
+			}
+			else if (haveBackgroundColor())  
+			{
+				painter.setBackgroundColor(m_background_color);
+				painter.clear();
 			}
 
 				/* if we don't have shadow, m_shadow_offset will be 0,0 */
