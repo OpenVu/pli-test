@@ -116,27 +116,32 @@ int eLabel::event(int event, void *data, void *data2)
 			if (!m_nowrap)
 				flags |= gPainter::RT_WRAP;
 
-			if(m_radius > 0 && m_have_background_color)
+			// Before the rendering logic
+			if (m_have_background_color)
 			{
-				int m_flags = 0;
-				if (size().width() <= 500 && size().height() <= 500) m_flags = gPainter::BT_ALPHABLEND;
-				else m_flags = gPainter::BT_ALPHATEST;
-	
-				if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
-				{
-					drawRect(m_pixmap ,size() ,m_background_color ,m_radius, m_flags);
-					m_last_color = m_background_color;
-				}
-				if (m_pixmap)
-				{
-					painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
-				}
-			}
-			// Add this new block to render background color without corner radius
-			if (m_have_background_color && m_radius == 0)
-			{
-				painter.setBackgroundColor(m_background_color);
-				painter.fill(eRect(ePoint(0, 0), size()));
+			    // Always apply background color, with or without corner radius
+			    int m_flags = (size().width() <= 500 && size().height() <= 500) 
+			        ? gPainter::BT_ALPHABLEND 
+			        : gPainter::BT_ALPHATEST;
+			
+			    // If radius is set, use rounded background
+			    if (m_radius > 0)
+			    {
+			        if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
+			        {
+			            drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
+			            m_last_color = m_background_color;
+			        }
+			        if (m_pixmap)
+			        {
+			            painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
+			        }
+			    }
+			    else 
+			    {
+			        // For no radius, directly fill with background color
+			        painter.fill(eRect(ePoint(0, 0), size()));
+			    }
 			}
 
 				/* if we don't have shadow, m_shadow_offset will be 0,0 */
