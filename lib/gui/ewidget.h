@@ -135,7 +135,7 @@ public:
 
 	void notifyShowHide();
 
-	void setCornerRadius(int radius);
+	//void setCornerRadius(int radius);
 };
 
 extern eWidgetDesktop *getDesktop(int which);
