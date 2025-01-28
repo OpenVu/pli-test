@@ -46,7 +46,7 @@ protected:
 	int event(int event, void *data=0, void *data2=0);
 	int m_pos;
 private:
-	int m_have_foreground_color, m_have_shadow_color;
+	int m_have_foreground_color, m_have_shadow_color, m_have_background_color;
 	gRGB m_foreground_color, m_shadow_color, m_border_color, m_background_color, m_last_color;
 	ePoint m_shadow_offset;
 	int m_border_size;
