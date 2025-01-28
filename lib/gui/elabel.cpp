@@ -122,8 +122,8 @@ int eLabel::event(int event, void *data, void *data2)
 				painter.setForegroundColor(m_shadow_color);
 			else if (m_have_foreground_color)
 				painter.setForegroundColor(m_foreground_color);
-			else if (haveBackgroundColor())
-				painter.setBackgroundColor(m_background_color);
+			//else if (haveBackgroundColor())
+				//painter.setBackgroundColor(m_background_color);
 
 			int flags = 0;
 			if (m_valign == alignTop)
