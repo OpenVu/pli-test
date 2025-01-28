@@ -453,6 +453,24 @@ static void convert_palette(uint32_t* pal, const gPalette& clut)
 	}
 }
 
+#define FIX 0x10000
+
+uint32_t* gPixmap::allocBoxBuf(const int dx, const int dy, uint32_t* buf)
+{
+	uint32_t* pixBuf = buf;
+	if (pixBuf == NULL) 
+	{
+		pixBuf = (uint32_t*)malloc(dx*dy*sizeof(uint32_t));
+		if (pixBuf == NULL) 
+		{
+			return NULL;
+		}
+	}
+	memset((void*)pixBuf, '\0', dx*dy*sizeof(uint32_t));
+
+	return pixBuf;
+}
+
 void gPixmap::drawGradient(const gRegion &region, const eRect &area, const gRGB &color, const gRGB &color2, int direction, int flag)
 {
 	uint32_t* gradientBuf = NULL;
@@ -545,8 +563,6 @@ void gPixmap::drawGradient(const gRegion &region, const eRect &area, const gRGB 
 	if (boxBuf)
 		free(boxBuf);
 }
-
-#define FIX 0x10000
 
 void gPixmap::blit(const gPixmap &src, const eRect &_pos, const gRegion &clip, int flag)
 {
