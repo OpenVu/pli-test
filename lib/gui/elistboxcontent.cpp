@@ -1341,7 +1341,7 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 				y += offs.y();
 				int width = PyFloat_Check(pwidth) ? (int)PyFloat_AsDouble(pwidth) : PyLong_AsLong(pwidth); 
 				int height = PyFloat_Check(pheight) ? (int)PyFloat_AsDouble(pheight) : PyLong_AsLong(pheight);
-				int direction = PyInt_AsLong(ppdirection);
+				int direction = PyLong_AsLong(ppdirection);
 
 				if (width == 0 || width < 0)
 					width = (selected) ? m_selectionsize.width() + width : m_itemsize.width() + width;
@@ -1360,14 +1360,14 @@ void eListboxPythonMultiContent::paint(gPainter &painter, eWindowStyle &style, c
 
 				if (!selected && ppstart_color && ppend_color)
 				{
-					unsigned int color = PyInt_AsUnsignedLongMask(ppstart_color);
-					unsigned int color1 = PyInt_AsUnsignedLongMask(ppend_color);
+					unsigned int color = PyLong_AsUnsignedLongMask(ppstart_color);
+					unsigned int color1 = PyLong_AsUnsignedLongMask(ppend_color);
 					painter.drawGradient(rect, gRGB(color), gRGB(color1), direction, flag);
 				}
 				else if (selected && ppstart_color_sel && ppend_color_sel)
 				{
-					unsigned int color = PyInt_AsUnsignedLongMask(ppstart_color_sel);
-					unsigned int color1 = PyInt_AsUnsignedLongMask(ppend_color_sel);
+					unsigned int color = PyLong_AsUnsignedLongMask(ppstart_color_sel);
+					unsigned int color1 = PyLong_AsUnsignedLongMask(ppend_color_sel);
 					painter.drawGradient(rect, gRGB(color), gRGB(color1), direction, flag);
 				}
 
