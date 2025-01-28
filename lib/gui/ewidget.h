@@ -52,7 +52,7 @@ public:
 	void setTransparent(int transp);
 
 	// Add this getter method
-	int haveBackgroundColor() const { return m_have_background_color; }
+	//int haveBackgroundColor() const { return m_have_background_color; }
 
 		/* untested code */
 	int isVisible() { return (m_vis & wVisShow) && ((!m_parent) || m_parent->isVisible()); }
