@@ -91,32 +91,27 @@ int eLabel::event(int event, void *data, void *data2)
 
 			if (haveBackgroundColor())  // Always draw background first
 			{
-				painter.setBackgroundColor(m_background_color);
-				
-				if (m_radius > 0)
-				{
-					int m_flags = 0;
-					if (size().width() <= 500 && size().height() <= 500)
-						m_flags = gPainter::BT_ALPHABLEND;
-					else
-						m_flags = gPainter::BT_ALPHATEST;
-
+			    painter.setBackgroundColor(m_background_color);
+			    if (m_radius > 0)
+			    	{
+					int m_flags = gPainter::BT_ALPHABLEND;
 					if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
 					{
-						drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
-						m_last_color = m_background_color;
+				    		drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
+				    		m_last_color = m_background_color;
 					}
-					
+			
 					if (m_pixmap)
 					{
-						painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
+				    		painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
 					}
-				}
-				else
-				{
+			    	}
+			    	else
+			    	{
 					painter.clear();
-				}
+			    	}
 			}
+
 
 			if (m_have_shadow_color)
 				painter.setForegroundColor(m_shadow_color);
@@ -229,16 +224,17 @@ void eLabel::setShadowColor(const gRGB &col)
 	}
 }
 
-//void eLabel::setBackgroundColor(const gRGB &col)
-//{
-    //if ((!m_have_background_color) || (m_background_color != col))
-    //{
-        //m_background_color = col;
-        //m_have_background_color = 1;
-        //m_pixmap = 0;  // Force redrawing of pixmap
-        //invalidate();
-    //}
-//}
+void eLabel::setBackgroundColor(const gRGB &col)
+{
+    if ((!m_have_background_color) || (m_background_color != col))
+    {
+        m_background_color = col;
+        m_have_background_color = 1;
+        m_pixmap = 0;  // Force redrawing of pixmap
+        invalidate();
+    }
+}
+
 
 void eLabel::setShadowOffset(const ePoint &offset)
 {
@@ -275,6 +271,17 @@ void eLabel::setCornerRadius(int radius)
 	setTransparent(1);
 	invalidate();
 }
+
+void eLabel::setCornerRadius(int radius)
+{
+    	if (m_radius != radius)
+    	{
+        	m_radius = radius;
+        	m_pixmap = 0;  // Force redrawing of pixmap
+        	invalidate();
+    	}
+}
+
 
 void eLabel::clearForegroundColor()
 {
