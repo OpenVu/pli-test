@@ -95,6 +95,8 @@ int eLabel::event(int event, void *data, void *data2)
 				painter.setForegroundColor(m_foreground_color);
 			else if (m_have_background_color)
 				painter.setBackgroundColor(m_background_color);
+			else if (haveBackgroundColor())
+				painter.setBackgroundColor(m_background_color);
 
 			int flags = 0;
 			if (m_valign == alignTop)
@@ -116,7 +118,7 @@ int eLabel::event(int event, void *data, void *data2)
 			if (!m_nowrap)
 				flags |= gPainter::RT_WRAP;
 
-			if(m_radius > 0 && m_have_background_color)
+			if(m_radius > 0 && haveBackgroundColor())
 			{
 				int m_flags = 0;
 				if (size().width() <= 500 && size().height() <= 500) m_flags = gPainter::BT_ALPHABLEND;
