@@ -264,13 +264,13 @@ void eLabel::setNoWrap(int nowrap)
 	}
 }
 
-void eLabel::setCornerRadius(int radius)
-{
-	m_radius = radius;
-	m_pixmap = 0;
-	setTransparent(1);
-	invalidate();
-}
+//void eLabel::setCornerRadius(int radius)
+//{
+	//m_radius = radius;
+	//m_pixmap = 0;
+	//setTransparent(1);
+	//invalidate();
+//}
 
 void eLabel::setCornerRadius(int radius)
 {
