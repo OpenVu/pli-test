@@ -1101,6 +1101,14 @@ void eListbox::setBackgroundColor(gRGB &col)
 	m_style.m_background_color_set = 1;
 }
 
+void eListbox::setBackgroundColorGradient(gRGB &start, gRGB &end, int direction)
+{
+	m_style.m_background_color_gradient_start = start;
+	m_style.m_background_color_gradient_stop = end;
+	m_style.m_background_color_gradient_direction = direction;
+	m_style.m_background_color_gradient_set = 1;
+}
+
 void eListbox::setBackgroundColorRows(gRGB &col)
 {
 	m_style.m_background_color_rows = col;
@@ -1117,6 +1125,14 @@ void eListbox::setBackgroundColorSelected(gRGB &col)
 {
 	m_style.m_background_color_selected = col;
 	m_style.m_background_color_selected_set = 1;
+}
+
+void eListbox::setBackgroundColorGradientSelected(gRGB &start, gRGB &end, int direction)
+{
+	m_style.m_background_color_gradient_selected_start = start;
+	m_style.m_background_color_gradient_selected_stop = end;
+	m_style.m_background_color_gradient_selected_direction = direction;
+	m_style.m_background_color_gradient_selected_set = 1;
 }
 
 void eListbox::setForegroundColor(gRGB &col)
