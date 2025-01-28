@@ -226,10 +226,10 @@ void eLabel::setShadowColor(const gRGB &col)
 
 void eLabel::setBackgroundColor(const gRGB &col)
 {
-    if ((!m_have_background_color) || (m_background_color != col))
+    if ((!haveBackgroundColor) || (m_background_color != col))
     {
         m_background_color = col;
-        m_have_background_color = 1;
+        haveBackgroundColor = 1;
         m_pixmap = 0;  // Force redrawing of pixmap
         invalidate();
     }
