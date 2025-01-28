@@ -308,22 +308,6 @@ void eWidget::insertIntoParent()
 
 void eWidget::doPaint(gPainter &painter, const gRegion &r, int layer)
 {
-	if (m_radius > 0 && m_have_background_color)
-    	{
-	        int m_flags = 0;
-	        if (size().width() <= 500 && size().height() <= 500) 
-	            m_flags = gPainter::BT_ALPHABLEND;
-	        else 
-	            m_flags = gPainter::BT_ALPHATEST;
-	
-	        ePtr<gPixmap> m_pixmap;
-	        drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
-	        
-	        if (m_pixmap)
-	        {
-	            painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
-	        }
-    	}
 	if (m_visible_with_childs.empty())
 		return;
 	gRegion region = r, childs = r;
