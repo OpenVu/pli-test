@@ -132,6 +132,12 @@ int eLabel::event(int event, void *data, void *data2)
 					painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
 				}
 			}
+			// Add this new block to render background color without corner radius
+			if (m_have_background_color && m_radius == 0)
+			{
+				painter.setBackgroundColor(m_background_color);
+				painter.fill(eRect(ePoint(0, 0), size()));
+			}
 
 				/* if we don't have shadow, m_shadow_offset will be 0,0 */
 			painter.renderText(eRect(-m_shadow_offset.x(), -m_shadow_offset.y(), size().width(), size().height()), m_text, flags, m_border_color, m_border_size);
