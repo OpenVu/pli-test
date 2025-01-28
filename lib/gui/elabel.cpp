@@ -91,27 +91,29 @@ int eLabel::event(int event, void *data, void *data2)
 
 			if (haveBackgroundColor())  // Always draw background first
 			{
-				if (m_radius > 0)  // With corner radius
+				painter.setBackgroundColor(m_background_color);
+				
+				if (m_radius > 0)
 				{
 					int m_flags = 0;
-					if (size().width() <= 500 && size().height() <= 500) 
+					if (size().width() <= 500 && size().height() <= 500)
 						m_flags = gPainter::BT_ALPHABLEND;
-					else 
+					else
 						m_flags = gPainter::BT_ALPHATEST;
-		
+
 					if (!m_pixmap || ((m_pixmap && m_pixmap->size() != size()) || m_background_color != m_last_color))
 					{
 						drawRect(m_pixmap, size(), m_background_color, m_radius, m_flags);
 						m_last_color = m_background_color;
 					}
+					
 					if (m_pixmap)
 					{
 						painter.blit(m_pixmap, eRect(ePoint(0, 0), size()), eRect(), m_flags);
 					}
 				}
-				else  // Without corner radius
+				else
 				{
-					painter.setBackgroundColor(m_background_color);
 					painter.clear();
 				}
 			}
