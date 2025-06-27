@@ -154,10 +154,11 @@ void gFBDC::exec(const gOpcode *o)
 		break;
 	}
 	case gOpcode::flush:
+	{
 		fb->blit();
-		break;
+
 #if defined(CONFIG_HISILICON_FB)
-		if(islocked()==0)
+		if (islocked() == 0)
 		{
 			bcm_accel_blit(
 				surface.data_phys, surface.x, surface.y, surface.stride, 0,
@@ -166,7 +167,10 @@ void gFBDC::exec(const gOpcode *o)
 				0, 0, surface.x, surface.y,
 				0, 0);
 		}
-#endif		
+#endif
+		break;
+	}
+
 	default:
 		gDC::exec(o);
 		break;
