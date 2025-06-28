@@ -310,71 +310,83 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // Debug info
-		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, m_selected=%d, items_per_page=%d, size=%d",
+		        // Debug: initial state
+		        eDebug("[MyListbox-Debug] Enter moveDown: oldsel=%d, m_top=%d, m_selected=%d, items_per_page=%d, size=%d",
 		               oldsel, m_top, m_selected, m_items_per_page, m_content->size());
 		
-		        // Don't do anything if animating
 		        if (m_animating)
 		            return;
 		
-		        // Compute the last “full‐page” top index
-		        int max_top = m_content->size() - m_items_per_page;
+		        int total_items = m_content->size();
+		        int max_top = total_items - m_items_per_page;
+		        int last_visible_index = m_top + m_items_per_page - 1;
 		
-		        // Initial incremental moves (before hitting fixed cursor pos)
+		        // Debug: list metrics
+		        eDebug("[MyListbox-Debug] total_items=%d, items_per_page=%d, max_top=%d, last_visible_index=%d",
+		               total_items, m_items_per_page, max_top, last_visible_index);
+		
+		        // Phase 1: initial cursor moves before sliding
 		        if (m_selected < 3 && m_top == 0)
 		        {
-		            // Move cursor normally without sliding
+		            eDebug("[MyListbox-Debug] Phase 1: simple cursor move");
 		            do {
 		                m_content->cursorMove(1);
 		                newsel = m_content->cursorGet();
 		            } while (newsel != oldsel && !m_content->currentCursorSelectable());
 		            m_selected = newsel;
+		            eDebug("[MyListbox-Debug] Cursor moved to %d", m_selected);
 		
 		            selectionChanged();
 		            updateScrollBar();
 		            invalidate();
 		        }
-		        // Sliding phase: only if next slide still shows a full page
+		        // Phase 2: sliding, but only if next slide keeps a full page
 		        else if (m_top + 1 <= max_top)
 		        {
-		            // Slide one item
+		            eDebug("[MyListbox-Debug] Phase 2: sliding");
 		            m_top += 1;
-		            m_selected = m_top + 3;       // keep cursor in 4th slot
+		            m_selected = m_top + 3;
 		            m_content->cursorSet(m_selected);
 		
-		            // Start slide animation
-		            m_animation_direction = 1;
-		            m_animation_offset    = 0;
-		            m_animation_target_offset = m_itemwidth + m_margin.x();
-		            m_animating = true;
+		            // Debug: after slide
+		            eDebug("[MyListbox-Debug] After slide: m_top=%d, m_selected=%d", m_top, m_selected);
+		
+		            // If last item just became visible
+		            if (m_top == max_top)
+		            {
+		                int last_idx = m_top + m_items_per_page - 1;
+		                eDebug("[MyListbox-Debug] Last item visible at index %d", last_idx);
+		            }
+		
+		            m_animation_direction      = 1;
+		            m_animation_offset         = 0;
+		            m_animation_target_offset  = m_itemwidth + m_margin.x();
+		            m_animating                = true;
 		            m_animation_timer->start(20, true);
 		
 		            invalidate();
 		        }
+		        // Phase 3: end-of-list, cursor moves within visible range
 		        else
 		        {
-		            // End‐of‐list: move cursor within the last full page
-		            if (m_selected < m_content->size() - 1)
-		            {
-		                do {
-		                    m_content->cursorMove(1);
-		                    newsel = m_content->cursorGet();
-		                } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		                m_selected = newsel;
+		            eDebug("[MyListbox-Debug] Phase 3: end-of-list, move cursor within last page");
+		            do {
+		                m_content->cursorMove(1);
+		                newsel = m_content->cursorGet();
+		            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		            m_selected = newsel;
+		            eDebug("[MyListbox-Debug] Cursor moved to %d", m_selected);
 		
-		                selectionChanged();
-		                updateScrollBar();
-		                invalidate();
-		            }
+		            selectionChanged();
+		            updateScrollBar();
+		            invalidate();
 		        }
 		
-		        // Prevent falling into generic logic
 		        return;
 		    }
 		    else
 		    {
-		        // Vertical & Grid: original behavior
+		        // Original vertical/grid logic
 		        do
 		        {
 		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown)
@@ -401,10 +413,9 @@ void eListbox::moveSelection(long dir)
 		            newsel = m_content->cursorGet();
 		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
 		        m_selected = newsel;
+		        break;
 		    }
-		    break;
 		}
-
 
 	case prevPage:
 	{
