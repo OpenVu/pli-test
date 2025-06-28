@@ -15,6 +15,9 @@ eListbox::eListbox(eWidget *parent) :
 	m_animation_timer(nullptr), m_animation_offset(0),
 	m_animation_target_offset(0), m_animation_step(20),
 	m_animating(false), m_animation_direction(0)
+	int m_animation_duration;   // total time (e.g. 300ms)
+	int m_animation_elapsed;    // time elapsed
+	int m_animation_total_offset;
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
@@ -63,23 +66,28 @@ void eListbox::animateStep()
 	if (!m_animating)
 		return;
 
-	m_animation_offset += m_animation_step;
+	m_animation_elapsed += 20;  // increment elapsed time
+	if (m_animation_elapsed > m_animation_duration)
+		m_animation_elapsed = m_animation_duration;
 
-	if (m_animation_offset >= m_animation_target_offset)
+	// Ease out quadratic: offset = target * (1 - (1 - t)^2)
+	float t = static_cast<float>(m_animation_elapsed) / m_animation_duration;
+	m_animation_offset = m_animation_total_offset * (1 - (1 - t) * (1 - t));
+
+	invalidate();
+
+	if (m_animation_elapsed >= m_animation_duration)
 	{
 		m_animating = false;
 		m_animation_offset = 0;
 
-		// ✅ Now update logical selection
 		m_content->cursorMove(m_animation_direction);
 		m_selected = m_content->cursorGet();
-		m_top = m_selected - (m_selected % m_items_per_page);  // optional
+		m_top = m_selected - (m_selected % m_items_per_page);
 		moveSelection(justCheck);
-		return;
 	}
-
-	invalidate();  // trigger repaint
-	m_animation_timer->start(20, true);  // continue animation
+	else
+		m_animation_timer->start(16, true);
 }
 
 void eListbox::setLayoutMode(int mode)
@@ -267,11 +275,13 @@ void eListbox::moveSelection(long dir)
 				m_content->cursorSet(oldsel);
 				m_selected = oldsel;
 	
-				m_animation_direction = 1;  // moving right
+				m_animation_direction = 1;
 				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();  // slide width
+				m_animation_elapsed = 0;
+				m_animation_duration = 300;
+				m_animation_total_offset = m_itemwidth + m_margin.x();
 				m_animating = true;
-				m_animation_timer->start(20, true);  // start animation
+				m_animation_timer->start(16, true);
 	
 				return;  // skip setting m_selected now, will be updated in animateStep()
 			}
