@@ -310,83 +310,89 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // Debugging information
+		        // Debug info
 		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, m_selected=%d, items_per_page=%d, size=%d",
 		               oldsel, m_top, m_selected, m_items_per_page, m_content->size());
 		
-		        // Prevent action if already animating
+		        // Don't do anything if animating
 		        if (m_animating)
 		            return;
 		
-		        // Calculate the maximum top index for sliding
+		        // Compute the last “full‐page” top index
 		        int max_top = m_content->size() - m_items_per_page;
 		
-		        if (m_top < max_top)
+		        // Initial incremental moves (before hitting fixed cursor pos)
+		        if (m_selected < 3 && m_top == 0)
 		        {
-		            // --- Sliding Phase ---
-		            // Slide the list and keep the cursor visually fixed
+		            // Move cursor normally without sliding
+		            do {
+		                m_content->cursorMove(1);
+		                newsel = m_content->cursorGet();
+		            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		            m_selected = newsel;
+		
+		            selectionChanged();
+		            updateScrollBar();
+		            invalidate();
+		        }
+		        // Sliding phase: only if next slide still shows a full page
+		        else if (m_top + 1 <= max_top)
+		        {
+		            // Slide one item
 		            m_top += 1;
-		
-		            // Check if the next slide will make the last item fully visible
-		            if (m_top >= max_top)
-		            {
-		                m_top = max_top;  // Clamp to the last possible value
-		            }
-		
-		            m_selected = m_top + 3;  // Keep cursor visually fixed at index 4
+		            m_selected = m_top + 3;       // keep cursor in 4th slot
 		            m_content->cursorSet(m_selected);
 		
-		            // Trigger sliding animation
-		            m_animation_direction = 1;  // Moving right
-		            m_animation_offset = 0;
+		            // Start slide animation
+		            m_animation_direction = 1;
+		            m_animation_offset    = 0;
 		            m_animation_target_offset = m_itemwidth + m_margin.x();
 		            m_animating = true;
 		            m_animation_timer->start(20, true);
 		
-		            invalidate();  // Redraw for animation
+		            invalidate();
 		        }
 		        else
 		        {
-		            // --- End-of-List Behavior ---
-		            // Sliding has stopped; move cursor within visible range
+		            // End‐of‐list: move cursor within the last full page
 		            if (m_selected < m_content->size() - 1)
 		            {
-		                // Move to the next selectable item
-		                do
-		                {
+		                do {
 		                    m_content->cursorMove(1);
 		                    newsel = m_content->cursorGet();
 		                } while (newsel != oldsel && !m_content->currentCursorSelectable());
 		                m_selected = newsel;
 		
-		                // Trigger updates for selection change
 		                selectionChanged();
 		                updateScrollBar();
-		                invalidate();  // Redraw for selection change
+		                invalidate();
 		            }
 		        }
 		
-		        // Exit case for horizontal layout
+		        // Prevent falling into generic logic
 		        return;
 		    }
 		    else
 		    {
-		        // Original logic for other layouts (Vertical, Grid)
+		        // Vertical & Grid: original behavior
 		        do
 		        {
-		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown)
+		                                  ? m_columns : 1);
 		            if (!m_content->cursorValid())
 		            {
 		                if (m_enabled_wrap_around)
 		                {
-		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+		                    if (oldsel + 1 < m_content->size() &&
+		                        m_layout_mode == LayoutGrid && dir == moveDown)
 		                        m_content->cursorMove(-1);
 		                    else
 		                        m_content->cursorHome();
 		                }
 		                else
 		                {
-		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+		                    if (oldsel + 1 < m_content->size() &&
+		                        m_layout_mode == LayoutGrid && dir == moveDown)
 		                        m_content->cursorMove(-1);
 		                    else
 		                        m_content->cursorSet(oldsel);
@@ -398,6 +404,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 	case prevPage:
 	{
