@@ -11,16 +11,10 @@ eListbox::eListbox(eWidget *parent) :
 	m_itemwidth_set(false), m_selectionheight_set(false), m_selectionwidth_set(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20), m_scrollbar_border_width(1), m_scrollbar_offset(5),
 	m_top(0), m_selected(0), m_layout_mode(LayoutVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
 	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_first_selectable_item(-1), m_last_selectable_item(-1), m_center_list(true), m_scrollbar(nullptr),
-	// animation-related initializations
-	m_animation_timer(nullptr),
-	m_animation_offset(0),
-	m_animation_target_offset(0),
-	m_animation_step(20),
-	m_animating(false),
-	m_animation_direction(0),
-	m_animation_duration(300),     // default duration
-	m_animation_elapsed(0),
-	m_animation_total_offset(0)
+	// NEW animation-related initializations
+	m_animation_timer(nullptr), m_animation_offset(0),
+	m_animation_target_offset(0), m_animation_step(20),
+	m_animating(false), m_animation_direction(0)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
@@ -69,28 +63,23 @@ void eListbox::animateStep()
 	if (!m_animating)
 		return;
 
-	m_animation_elapsed += 20;  // increment elapsed time
-	if (m_animation_elapsed > m_animation_duration)
-		m_animation_elapsed = m_animation_duration;
+	m_animation_offset += m_animation_step;
 
-	// Ease out quadratic: offset = target * (1 - (1 - t)^2)
-	float t = static_cast<float>(m_animation_elapsed) / m_animation_duration;
-	m_animation_offset = m_animation_total_offset * (1 - (1 - t) * (1 - t));
-
-	invalidate();
-
-	if (m_animation_elapsed >= m_animation_duration)
+	if (m_animation_offset >= m_animation_target_offset)
 	{
 		m_animating = false;
 		m_animation_offset = 0;
 
+		// ✅ Now update logical selection
 		m_content->cursorMove(m_animation_direction);
 		m_selected = m_content->cursorGet();
-		m_top = m_selected - (m_selected % m_items_per_page);
+		m_top = m_selected - (m_selected % m_items_per_page);  // optional
 		moveSelection(justCheck);
+		return;
 	}
-	else
-		m_animation_timer->start(16, true);
+
+	invalidate();  // trigger repaint
+	m_animation_timer->start(20, true);  // continue animation
 }
 
 void eListbox::setLayoutMode(int mode)
@@ -278,13 +267,11 @@ void eListbox::moveSelection(long dir)
 				m_content->cursorSet(oldsel);
 				m_selected = oldsel;
 	
-				m_animation_direction = 1;
+				m_animation_direction = 1;  // moving right
 				m_animation_offset = 0;
-				m_animation_elapsed = 0;
-				m_animation_duration = 300;
-				m_animation_total_offset = m_itemwidth + m_margin.x();
+				m_animation_target_offset = m_itemwidth + m_margin.x();  // slide width
 				m_animating = true;
-				m_animation_timer->start(16, true);
+				m_animation_timer->start(20, true);  // start animation
 	
 				return;  // skip setting m_selected now, will be updated in animateStep()
 			}
