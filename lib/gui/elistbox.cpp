@@ -696,6 +696,7 @@ int eListbox::event(int event, void *data, void *data2)
 
 		gPainter &painter = *(gPainter *)data2;
 		m_content->cursorSave();
+		m_content->cursorMove(m_top - m_selected);
 
 		const gRegion &paint_region = *(gRegion *)data;
 		gRegion entryrect;
@@ -714,13 +715,7 @@ int eListbox::event(int event, void *data, void *data2)
 			painter.clippop();
 		}
 
-		const int locked_index = 3;
-		int paint_start_index = m_selected - locked_index;
-		if (paint_start_index < 0)
-			paint_start_index = 0;
-
-		m_content->cursorMove(m_top - paint_start_index);
-
+		// Include 2 extra items if animating horizontally
 		int extra_items = (m_layout_mode == LayoutHorizontal && m_animating) ? 2 : 0;
 		int total_items_to_draw = m_items_per_page + extra_items;
 
@@ -765,8 +760,9 @@ int eListbox::event(int event, void *data, void *data2)
 					posy += m_itemheight + m_margin.y();
 			}
 
-			// Don't highlight items here, selection is painted separately
-			bool sel = false;
+			bool sel = (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled);
+			if (sel)
+				line = i;
 
 			// Apply horizontal animation offset
 			int x_anim_shift = 0;
@@ -780,7 +776,15 @@ int eListbox::event(int event, void *data, void *data2)
 			gRegion entry_clip_rect = paint_region & entryrect;
 
 			if (!entry_clip_rect.empty())
-				m_content->paint(painter, *style, ePoint(draw_x, draw_y), sel);
+			{
+				if (m_layout_mode != LayoutVertical && m_content->cursorValid())
+				{
+					if (i != (m_selected - m_top) || !m_selection_enabled)
+						m_content->paint(painter, *style, ePoint(draw_x, draw_y), 0);
+				}
+				else if (m_layout_mode == LayoutVertical)
+					m_content->paint(painter, *style, ePoint(draw_x, draw_y), sel);
+			}
 
 			m_content->cursorMove(+1);
 		}
@@ -788,17 +792,15 @@ int eListbox::event(int event, void *data, void *data2)
 		m_content->cursorSaveLine(line);
 		m_content->cursorRestore();
 
-		// Draw selection box at fixed screen slot (locked_index)
-		if (m_content->size() && m_selection_enabled && m_layout_mode != LayoutVertical)
+		// Draw selected item again (on top)
+		if (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled && m_layout_mode != LayoutVertical)
 		{
 			ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-
-			int sel_index = locked_index;
 			int posx_sel = (m_layout_mode == LayoutGrid)
-				? (m_itemwidth + margin.x()) * (sel_index % m_columns)
-				: (m_itemwidth + margin.x()) * sel_index;
+				? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns)
+				: (m_itemwidth + margin.x()) * (m_selected - m_top);
 			int posy_sel = (m_layout_mode == LayoutGrid)
-				? (m_itemheight + margin.y()) * (sel_index / m_columns)
+				? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns)
 				: 0;
 
 			if (m_layout_mode == LayoutVertical)
@@ -824,16 +826,15 @@ int eListbox::event(int event, void *data, void *data2)
 				painter.clippop();
 			}
 
-			m_content->cursorSet(m_selected);
 			m_content->paint(painter, *style, ePoint(sel_x, sel_y), 1);
 		}
 
-		// Clear space beside scrollbar
+		// Clear empty space near vertical scrollbar
 		if (m_scrollbar && m_scrollbar->isVisible() && !isTransparent() && m_layout_mode == LayoutVertical)
 		{
 			style->setStyle(painter, eWindowStyle::styleListboxNormal);
 			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset, 0),
-				eSize(m_scrollbar_offset, m_scrollbar->size().height())));
+							   eSize(m_scrollbar_offset, m_scrollbar->size().height())));
 			if (m_style.m_background_color_set)
 				painter.setBackgroundColor(m_style.m_background_color);
 			painter.clear();
