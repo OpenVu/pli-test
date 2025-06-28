@@ -19,7 +19,7 @@ eListbox::eListbox(eWidget *parent) :
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
 //	setContent(new eListboxStringContent());
-	m_animation_timer = new eTimer();  // no 'this'
+	eTimer::create(m_animation_timer);  // no 'this'
 	CONNECT(m_animation_timer->timeout, eListbox::animateStep);
 
 	allowNativeKeys(true);
