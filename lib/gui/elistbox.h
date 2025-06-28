@@ -258,20 +258,19 @@ private:
 	int m_last_selectable_item;
 	bool m_center_list;
 
-	// <-- Add animation variables here:
-	eTimer *m_animation_timer;
-	int m_animation_offset;
-	int m_animation_target_offset;
-	int m_animation_step;
-	bool m_animating;
-	int m_animation_direction;
-	
-
 	ePoint m_margin;
 	ePtr<iListboxContent> m_content;
 	eSlider *m_scrollbar;
 	eListboxStyle m_style;
 	ePtr<gPixmap> m_scrollbarpixmap, m_scrollbarbackgroundpixmap;
+
+	// Animation members must come AFTER m_scrollbar
+	ePtr<eTimer> m_animation_timer;
+	int m_animation_offset;
+	int m_animation_target_offset;
+	int m_animation_step;
+	bool m_animating;
+	int m_animation_direction;
 #endif
 };
 
