@@ -93,12 +93,7 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
-
-        // Update top to slide the list left, keep cursor at index 3 relative to visible area
-        m_top += m_animation_direction;
-        m_selected = m_top + 3; // Fix cursor at index 3 relative to m_top
-        m_content->cursorSet(m_selected);
-        moveSelection(justCheck);
+        // Update completed in moveSelection, no further updates needed here
         return;
     }
 
@@ -316,21 +311,28 @@ void eListbox::moveSelection(long dir)
 	                newsel = m_content->cursorGet();
 	            } while (newsel != oldsel && !m_content->currentCursorSelectable() && newsel < 3);
 	            m_selected = newsel;
+	            m_top = 0; // Ensure m_top stays at 0 until index 3
 	        }
 	        else if (m_layout_mode == LayoutHorizontal)
 	        {
 	            // Fix cursor at index 3 relative to visible area, slide list left
 	            if (!m_animating)
 	            {
+	                m_top += 1; // Slide list by incrementing m_top
+	                m_selected = m_top + 3; // Fix cursor at index 3 relative to m_top
+	                m_content->cursorSet(m_selected);
 	                m_animation_direction = 1;  // moving right
 	                m_animation_offset = 0;
 	                m_animation_target_offset = m_itemwidth + m_margin.x();
-	                m_animating = true;
-	                m_animation_timer->start(20, true);
-	                return;  // Animation will handle cursor and top update
+	                if (m_selected < m_content->size()) // Only animate if within bounds
+	                {
+	                    m_animating = true;
+	                    m_animation_timer->start(20, true);
+	                }
+	                invalidate(); // Trigger repaint for new m_top
+	                return;
 	            }
-	            m_selected = m_top + 3; // Ensure cursor stays at index 3
-	            m_content->cursorSet(m_selected);
+	            // If animating, do nothing to avoid interrupting animation
 	        }
 	        else
 	        {
