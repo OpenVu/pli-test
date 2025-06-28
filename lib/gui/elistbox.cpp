@@ -311,25 +311,45 @@ void eListbox::moveSelection(long dir)
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
 		        // Debugging information
-		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
+		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, m_selected=%d, items_per_page=%d, size=%d", 
+		               oldsel, m_top, m_selected, m_items_per_page, m_content->size());
 		
-		        // Prevent action if already animating
+		        // Prevent action if animating
 		        if (m_animating)
 		            return;
 		
-		        // Calculate the last visible top index
+		        // Determine the maximum top index for sliding
 		        int max_top = m_content->size() - m_items_per_page;
 		
-		        if (m_top < max_top)
+		        // Behavior when the cursor is within the initial visible range (no sliding)
+		        if (m_selected < 3 || m_top == 0)
+		        {
+		            // Move the cursor to the next selectable index without sliding
+		            if (m_selected < m_content->size() - 1)
+		            {
+		                do
+		                {
+		                    m_content->cursorMove(1);
+		                    newsel = m_content->cursorGet();
+		                } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		                m_selected = newsel;
+		
+		                // Trigger updates for selection change
+		                selectionChanged();
+		                updateScrollBar();
+		                invalidate();  // Redraw for selection change
+		            }
+		        }
+		        else if (m_top < max_top)
 		        {
 		            // --- Sliding Logic ---
-		            // Slide the list and keep cursor fixed in position
+		            // Slide the list and keep the cursor fixed in position
 		            m_top += 1;
-		            m_selected = m_top + 3;  // Keep cursor fixed at 4th position
+		            m_selected = m_top + 3;  // Keep cursor visually fixed at 4th position
 		            m_content->cursorSet(m_selected);
 		
-		            // Trigger animation for sliding
-		            m_animation_direction = 1;  // Sliding to the right
+		            // Trigger sliding animation
+		            m_animation_direction = 1;  // Moving to the right
 		            m_animation_offset = 0;
 		            m_animation_target_offset = m_itemwidth + m_margin.x();
 		            m_animating = true;
@@ -339,8 +359,8 @@ void eListbox::moveSelection(long dir)
 		        }
 		        else
 		        {
-		            // --- Cursor Movement Logic ---
-		            // Sliding has stopped, move cursor between visible items
+		            // --- Cursor Movement Logic at the End ---
+		            // Sliding has stopped; move cursor within visible range
 		            if (m_selected < m_content->size() - 1)
 		            {
 		                // Move to the next selectable item
@@ -390,6 +410,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 	
 
