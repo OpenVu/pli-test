@@ -58,29 +58,24 @@ void eListbox::setScrollbarMode(int mode)
 	}
 }
 
-/* void eListbox::animateStep()
+/*void eListbox::animateStep()
 {
-	if (!m_animating)
-		return;
+    if (!m_animating)
+        return;
 
-	m_animation_offset += m_animation_step;
+    m_animation_offset += m_animation_step;
 
-	if (m_animation_offset >= m_animation_target_offset)
-	{
-		m_animating = false;
-		m_animation_offset = 0;
+    if (m_animation_offset >= m_animation_target_offset)
+    {
+        m_animating = false;
+        m_animation_offset = 0;
+        // Update completed in moveSelection, no further updates needed here
+        return;
+    }
 
-		// ✅ Now update logical selection
-		m_content->cursorMove(m_animation_direction);
-		m_selected = m_content->cursorGet();
-		m_top = m_selected - (m_selected % m_items_per_page);  // optional
-		moveSelection(justCheck);
-		return;
-	}
-
-	invalidate();  // trigger repaint
-	m_animation_timer->start(20, true);  // continue animation
-} */
+    invalidate();  // trigger repaint
+    m_animation_timer->start(20, true);  // continue animation
+}*/
 
 void eListbox::animateStep()
 {
@@ -93,7 +88,7 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
-        // Update completed in moveSelection, no further updates needed here
+        // m_top and m_selected are updated in moveSelection
         return;
     }
 
@@ -247,60 +242,75 @@ void eListbox::moveSelection(long dir)
 			break;
 		[[fallthrough]];
 	case pageDown:
-	/*case moveDown:
-	{
-		// Move the selection first
-		do
-		{
-			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-	
-			if (!m_content->cursorValid())
-			{
-				// Reached end — handle wrap-around or restore old position
-				if (m_enabled_wrap_around)
-				{
-					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-						m_content->cursorMove(-1);
-					else
-						m_content->cursorHome();
-				}
-				else
-				{
-					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-						m_content->cursorMove(-1);
-					else
-						m_content->cursorSet(oldsel);
-				}
-			}
-	
-			newsel = m_content->cursorGet();
-		} while (newsel != oldsel && !m_content->currentCursorSelectable());
-	
-		// Trigger animation only in horizontal layout and only when new index >= 3
-		if (m_layout_mode == LayoutHorizontal && !m_animating)
-		{
-			const int visible_threshold = 3;
-			if (newsel >= visible_threshold)
-			{
-				// Temporarily revert visual cursor to old position
-				m_content->cursorSet(oldsel);
-				m_selected = oldsel;
-	
-				m_animation_direction = 1;  // moving right
-				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();  // slide width
-				m_animating = true;
-				m_animation_timer->start(20, true);  // start animation
-	
-				return;  // skip setting m_selected now, will be updated in animateStep()
-			}
-		}
-	
-		// No animation — set new selection directly
-		m_selected = newsel;
-		break;
-	}*/
 	case moveDown:
+	    {
+	        if (m_layout_mode == LayoutHorizontal)
+	        {
+	            // Move cursor freely
+	            do
+	            {
+	                m_content->cursorMove(1);
+	                newsel = m_content->cursorGet();
+	                if (!m_content->cursorValid())
+	                {
+	                    m_content->cursorSet(oldsel);
+	                    newsel = oldsel;
+	                    break;
+	                }
+	            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	            m_selected = newsel;
+	
+	            // Calculate m_top to keep cursor in visible area
+	            const int visible_threshold = 3;
+	            const int max_top = m_content->size() - m_items_per_page;
+	            if (m_selected >= visible_threshold)
+	            {
+	                m_top = std::min(m_selected - visible_threshold + 1, max_top);
+	            }
+	            else
+	            {
+	                m_top = 0;
+	            }
+	
+	            // Trigger animation if top changed and not already animating
+	            if (m_top != oldtop && !m_animating && m_selected < m_content->size())
+	            {
+	                m_animation_direction = 1;  // moving right
+	                m_animation_offset = 0;
+	                m_animation_target_offset = m_itemwidth + m_margin.x();
+	                m_animating = true;
+	                m_animation_timer->start(20, true);
+	            }
+	        }
+	        else
+	        {
+	            do
+	            {
+	                m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+	                if (!m_content->cursorValid())
+	                {
+	                    if (m_enabled_wrap_around)
+	                    {
+	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                            m_content->cursorMove(-1);
+	                        else
+	                            m_content->cursorHome();
+	                    }
+	                    else
+	                    {
+	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                            m_content->cursorMove(-1);
+	                        else
+	                            m_content->cursorSet(oldsel);
+	                    }
+	                }
+	                newsel = m_content->cursorGet();
+	            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	            m_selected = newsel;
+	        }
+	        break;
+	    }	
+	/*case moveDown:
 	    {
 	        // Move cursor up to index 3, then fix cursor and slide list
 	        if (m_layout_mode == LayoutHorizontal && oldsel < 3)
@@ -361,7 +371,7 @@ void eListbox::moveSelection(long dir)
 	            m_selected = newsel;
 	        }
 	        break;
-	    }	
+	    }*/	
 	
 	case prevPage:
 	{
