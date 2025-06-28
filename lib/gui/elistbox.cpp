@@ -310,96 +310,60 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // Debugging information (optional)
+		        // Debugging information
 		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
 		
-		        // Prevent additional sliding if animating or at the last item
-		        if (m_animating || oldsel >= m_content->size() - 1)
+		        // Prevent action if already animating
+		        if (m_animating)
 		            return;
 		
-		        // Determine whether sliding should stop
-		        bool stop_sliding = (m_content->size() > m_items_per_page) 
-		                            ? (m_top >= m_content->size() - m_items_per_page) 
-		                            : true;
-		        int old_top = m_top; // Store the list's position before any changes
+		        // Calculate the last visible top index
+		        int max_top = m_content->size() - m_items_per_page;
 		
-		        if (oldsel < 3 || stop_sliding)
+		        if (m_top < max_top)
 		        {
-		            // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT ---
-		            // This happens at the start of the list, OR after sliding has stopped.
-		            // The list position (m_top) is frozen, and only the selection moves.
-		
-		            // Find the next selectable item
-		            do
-		            {
-		                m_content->cursorMove(1);
-		                newsel = m_content->cursorGet();
-		            } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		            m_selected = newsel;
-		
-		            // At the very start of the list, m_top is 0. Otherwise, it's frozen.
-		            if (oldsel < 3)
-		                m_top = 0;
-		
-		            // Manually trigger updates and redraws for the selection change
-		            selectionChanged();
-		            updateScrollBar();
-		
-		            if (old_top != m_top)
-		                invalidate(); // Redraw everything if m_top changed
-		            else
-		            {
-		                // Redraw just the old and new selected items for efficiency
-		                ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-		                ePoint oldmargin = (oldsel > 0) ? m_margin : ePoint(0, 0);
-		                int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) 
-		                                      ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) 
-		                                      : 0;
-		                int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) 
-		                                      ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset 
-		                                      : yoffset;
-		                int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
-		
-		                if (m_layout_mode == LayoutHorizontal)
-		                {
-		                    gRegion inv = eRect((((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset,
-		                                        shadow_offset_y, 
-		                                        m_selectionwidth + shadow_size, 
-		                                        m_selectionheight + shadow_size);
-		                    inv |= eRect((((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset, 
-		                                 shadow_offset_y, 
-		                                 m_selectionwidth + shadow_size, 
-		                                 m_selectionheight + shadow_size);
-		                    invalidate(inv);
-		                }
-		            }
-		        }
-		        else
-		        {
-		            // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
-		            // The list position slides left, and the selection stays visually fixed.
-		
-		            // Update list position and selection
+		            // --- Sliding Logic ---
+		            // Slide the list and keep cursor fixed in position
 		            m_top += 1;
-		            m_selected = m_top + 3;
+		            m_selected = m_top + 3;  // Keep cursor fixed at 4th position
 		            m_content->cursorSet(m_selected);
 		
-		            // Trigger the sliding animation
-		            m_animation_direction = 1;
+		            // Trigger animation for sliding
+		            m_animation_direction = 1;  // Sliding to the right
 		            m_animation_offset = 0;
 		            m_animation_target_offset = m_itemwidth + m_margin.x();
 		            m_animating = true;
 		            m_animation_timer->start(20, true);
 		
-		            invalidate(); // Redraw everything for the slide
+		            invalidate();  // Redraw for animation
+		        }
+		        else
+		        {
+		            // --- Cursor Movement Logic ---
+		            // Sliding has stopped, move cursor between visible items
+		            if (m_selected < m_content->size() - 1)
+		            {
+		                // Move to the next selectable item
+		                do
+		                {
+		                    m_content->cursorMove(1);
+		                    newsel = m_content->cursorGet();
+		                } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		                m_selected = newsel;
+		
+		                // Trigger updates for selection change
+		                selectionChanged();
+		                updateScrollBar();
+		                invalidate();  // Redraw for selection change
+		            }
 		        }
 		
-		        // Stop further execution for horizontal layout
+		        // Exit case for horizontal layout
 		        return;
 		    }
 		    else
 		    {
-		        // --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
+		        // Original logic for other layouts (Vertical, Grid)
 		        do
 		        {
 		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
@@ -426,6 +390,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 	
 
 	case prevPage:
