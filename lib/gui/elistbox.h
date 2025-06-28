@@ -256,6 +256,14 @@ private:
 	int m_first_selectable_item;
 	int m_last_selectable_item;
 	bool m_center_list;
+
+	// <-- Add animation variables here:
+	eTimer *m_animation_timer;
+	int m_animation_offset;
+	int m_animation_target_offset;
+	int m_animation_step;
+	bool m_animating;
+	int m_animation_direction;
 	
 
 	ePoint m_margin;
