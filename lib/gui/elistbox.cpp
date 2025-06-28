@@ -316,8 +316,8 @@ void eListbox::moveSelection(long dir)
 	            if (m_animating) return;
 	            if (oldsel >= m_content->size() - 1) return;
 
-	            // Determine if we should stop sliding. This happens when the last item is visible.
-	            bool stop_sliding = (m_top + m_items_per_page >= m_content->size());
+	            // This condition is now corrected. It stops the slide if m_top has reached its maximum possible value.
+	            bool stop_sliding = (m_content->size() > m_items_per_page) ? (m_top >= m_content->size() - m_items_per_page) : true;
 				int old_top = m_top; // Store the list's position before any changes
 
 	            if (oldsel < 3 || stop_sliding)
