@@ -854,8 +854,6 @@ int eListbox::event(int event, void *data, void *data2)
 		//int extra_items = (m_layout_mode == LayoutHorizontal && m_animating) ? 2 : 0;
 		int extra_items = (m_layout_mode == LayoutHorizontal) ? 2 : 0;
 		int total_items_to_draw = m_items_per_page + extra_items;
-		//int extra_items = m_animating ? 1 : 0;
-		//int total_items_to_draw = m_items_per_page + extra_items;
 
 		for (int posx = 0, posy = 0, i = 0;
 			(m_layout_mode == LayoutVertical) ? i <= m_items_per_page : i < total_items_to_draw;
