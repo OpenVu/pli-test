@@ -225,6 +225,7 @@ public:
 protected:
 	int event(int event, void *data=0, void *data2=0);
 	void recalcSize();
+	void animateStep();  // <--- Add this line
 
 private:
 	int m_scrollbar_mode, m_scroll_mode, m_prev_scrollbar_page;
