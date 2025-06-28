@@ -310,42 +310,39 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // Debugging information
-		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, m_selected=%d, items_per_page=%d, size=%d", 
+		        // Debugging information for troubleshooting
+		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, m_selected=%d, items_per_page=%d, size=%d",
 		               oldsel, m_top, m_selected, m_items_per_page, m_content->size());
 		
-		        // Prevent action if animating
+		        // Prevent further action if animating
 		        if (m_animating)
 		            return;
 		
-		        // Determine the maximum top index for sliding
+		        // Calculate the maximum top index for sliding
 		        int max_top = m_content->size() - m_items_per_page;
 		
-		        // Behavior when the cursor is within the initial visible range (no sliding)
-		        if (m_selected < 3 || m_top == 0)
+		        if (m_selected < 3)
 		        {
-		            // Move the cursor to the next selectable index without sliding
-		            if (m_selected < m_content->size() - 1)
+		            // --- Initial Cursor Movement ---
+		            // Move the cursor incrementally without sliding
+		            do
 		            {
-		                do
-		                {
-		                    m_content->cursorMove(1);
-		                    newsel = m_content->cursorGet();
-		                } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		                m_selected = newsel;
+		                m_content->cursorMove(1);
+		                newsel = m_content->cursorGet();
+		            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		            m_selected = newsel;
 		
-		                // Trigger updates for selection change
-		                selectionChanged();
-		                updateScrollBar();
-		                invalidate();  // Redraw for selection change
-		            }
+		            // Trigger updates for selection change
+		            selectionChanged();
+		            updateScrollBar();
+		            invalidate();  // Redraw for selection
 		        }
 		        else if (m_top < max_top)
 		        {
-		            // --- Sliding Logic ---
-		            // Slide the list and keep the cursor fixed in position
+		            // --- Sliding Phase ---
+		            // Slide the list while keeping the cursor visually fixed
 		            m_top += 1;
-		            m_selected = m_top + 3;  // Keep cursor visually fixed at 4th position
+		            m_selected = m_top + 3;  // Keep cursor fixed at index 4
 		            m_content->cursorSet(m_selected);
 		
 		            // Trigger sliding animation
@@ -359,8 +356,8 @@ void eListbox::moveSelection(long dir)
 		        }
 		        else
 		        {
-		            // --- Cursor Movement Logic at the End ---
-		            // Sliding has stopped; move cursor within visible range
+		            // --- End-of-List Behavior ---
+		            // Sliding has stopped; move cursor between visible items
 		            if (m_selected < m_content->size() - 1)
 		            {
 		                // Move to the next selectable item
@@ -374,11 +371,11 @@ void eListbox::moveSelection(long dir)
 		                // Trigger updates for selection change
 		                selectionChanged();
 		                updateScrollBar();
-		                invalidate();  // Redraw for selection change
+		                invalidate();  // Redraw for selection
 		            }
 		        }
 		
-		        // Exit case for horizontal layout
+		        // Exit for horizontal layout
 		        return;
 		    }
 		    else
@@ -410,6 +407,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 
 	
