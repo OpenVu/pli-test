@@ -307,103 +307,80 @@ void eListbox::moveSelection(long dir)
 	    }*/
 
 	case moveDown:
-	{
-		// START ZONE LOGIC (for horizontal layout)
-		// Moves the selection normally until it reaches the fixed position (index 3).
-		if (m_layout_mode == LayoutHorizontal && oldsel < 3)
-		{
-			do
-			{
-				m_content->cursorMove(1);
-				newsel = m_content->cursorGet();
-			} while (newsel != oldsel && !m_content->currentCursorSelectable() && newsel < 3);
-			m_selected = newsel;
-			m_top = 0; // Keep the list scrolled to the very beginning.
-		}
-		// SLIDING and END ZONE LOGIC (for horizontal layout)
-		else if (m_layout_mode == LayoutHorizontal)
-		{
-			// If an animation is already playing, ignore this input to prevent issues.
-			if (m_animating)
-			{
-				return;
-			}
+	    {
+	        if (m_layout_mode == LayoutHorizontal)
+	        {
+	            // If an animation is already in progress, do nothing to avoid interruption.
+	            if (m_animating) break;
 
-			int list_size = m_content->size();
-			if (!list_size)
-			{
-				break; // Do nothing if the list is empty.
-			}
+	            // If the cursor is already on the last item, there's nowhere to move.
+	            if (oldsel == m_content->size() - 1) break;
 
-			// Calculate the maximum scroll position. The list stops sliding when m_top reaches this value.
-			int max_top = (list_size > m_items_per_page) ? (list_size - m_items_per_page) : 0;
+	            // Condition to determine if the list should slide.
+	            // It should only slide if the cursor is at or past index 3 AND the last item is not yet visible.
+	            bool should_slide = (oldsel >= 3) && (m_top + m_items_per_page < m_content->size());
 
-			if (m_top < max_top)
-			{
-				// SLIDING ZONE: The list content slides left, and the selection point is fixed.
-				m_top += 1; // Slide the list one position to the left.
-				m_selected = m_top + 3; // The selection is fixed at the 4th visible item (index 3).
-				m_content->cursorSet(m_selected);
+	            if (should_slide)
+	            {
+	                // --- SLIDING LOGIC ---
+	                // The list slides by incrementing the top-most visible item's index (m_top).
+	                m_top += 1;
+	                // The selected item is kept at a fixed visual position (index 3).
+	                m_selected = m_top + 3;
+	                m_content->cursorSet(m_selected);
 
-				// Configure and start the slide animation.
-				m_animation_direction = 1;  // Moving right.
-				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();
-				m_animating = true;
-				m_animation_timer->start(20, true);
+	                // Trigger the sliding animation.
+	                m_animation_direction = 1;  // moving right
+	                m_animation_offset = 0;
+	                m_animation_target_offset = m_itemwidth + m_margin.x();
+	                m_animating = true;
+	                m_animation_timer->start(20, true);
 
-				invalidate(); // Trigger a repaint to show the new position.
-				return;       // Exit the function immediately to let the animation play out.
-			}
-			else
-			{
-				// END ZONE: Sliding has stopped. Move the selection cursor normally.
-				// This logic moves the cursor one by one and stops at the last item.
-				do
-				{
-					m_content->cursorMove(1);
-					// Check if the cursor has moved past the last item.
-					if (!m_content->cursorValid())
-					{
-						// If so, move it back to the last valid position (where it was before).
-						m_content->cursorSet(oldsel);
-						break; // Exit the loop.
-					}
-					newsel = m_content->cursorGet();
-				} while (newsel != oldsel && !m_content->currentCursorSelectable()); // Skip non-selectable items.
-				m_selected = m_content->cursorGet();
-			}
-		}
-		// STANDARD LOGIC (for Vertical and Grid layouts)
-		else
-		{
-			// This is the original, unchanged logic for all other list types.
-			do
-			{
-				m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-				if (!m_content->cursorValid())
-				{
-					if (m_enabled_wrap_around)
-					{
-						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-							m_content->cursorMove(-1);
-						else
-							m_content->cursorHome();
-					}
-					else
-					{
-						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-							m_content->cursorMove(-1);
-						else
-							m_content->cursorSet(oldsel);
-					}
-				}
-				newsel = m_content->cursorGet();
-			} while (newsel != oldsel && !m_content->currentCursorSelectable());
-			m_selected = newsel;
-		}
-		break;
-	}	
+	                invalidate(); // Request a repaint.
+	                return;       // Exit the function to let the animation handle drawing.
+	            }
+	            else
+	            {
+	                // --- NORMAL CURSOR MOVEMENT LOGIC ---
+	                // This is executed when at the beginning of the list, or after sliding has stopped.
+	                // Move the content cursor one position forward.
+	                do
+	                {
+	                    m_content->cursorMove(1);
+	                    newsel = m_content->cursorGet();
+	                } while (newsel != oldsel && !m_content->currentCursorSelectable());
+
+	                // Allow the rest of the function to handle updating m_selected and m_top.
+	            }
+	        }
+	        else // This is the original, unchanged logic for other layout modes (Vertical, Grid).
+	        {
+	            do
+	            {
+	                m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+	                if (!m_content->cursorValid())
+	                {
+	                    if (m_enabled_wrap_around)
+	                    {
+	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                            m_content->cursorMove(-1);
+	                        else
+	                            m_content->cursorHome();
+	                    }
+	                    else
+	                    {
+	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                            m_content->cursorMove(-1);
+	                        else
+	                            m_content->cursorSet(oldsel);
+	                    }
+	                }
+	                newsel = m_content->cursorGet();
+	            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	            m_selected = newsel;
+	        }
+	        break;
+	    }	
 
 	case prevPage:
 	{
