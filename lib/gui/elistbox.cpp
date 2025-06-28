@@ -10,11 +10,17 @@ eListbox::eListbox(eWidget *parent) :
 	m_content_changed(false), m_enabled_wrap_around(false), m_itemheight_set(false),
 	m_itemwidth_set(false), m_selectionheight_set(false), m_selectionwidth_set(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20), m_scrollbar_border_width(1), m_scrollbar_offset(5),
 	m_top(0), m_selected(0), m_layout_mode(LayoutVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
-	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_first_selectable_item(-1), m_last_selectable_item(-1), m_center_list(true), m_scrollbar(nullptr)
+	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_first_selectable_item(-1), m_last_selectable_item(-1), m_center_list(true), m_scrollbar(nullptr),
+	// NEW animation-related initializations
+	m_animation_timer(nullptr), m_animation_offset(0),
+	m_animation_target_offset(0), m_animation_step(20),
+	m_animating(false), m_animation_direction(0)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
 //	setContent(new eListboxStringContent());
+	m_animation_timer = new eTimer(this);
+	CONNECT(m_animation_timer->timeout, eListbox::animateStep);
 
 	allowNativeKeys(true);
 }
@@ -23,6 +29,8 @@ eListbox::~eListbox()
 {
 	if (m_scrollbar)
 		delete m_scrollbar;
+	if (m_animation_timer)
+		delete m_animation_timer;
 
 	allowNativeKeys(false);
 }
@@ -49,6 +57,29 @@ void eListbox::setScrollbarMode(int mode)
 		if (m_scrollbarpixmap) m_scrollbar->setPixmap(m_scrollbarpixmap);
 		if (m_style.m_sliderborder_color_set) m_scrollbar->setSliderBorderColor(m_style.m_sliderborder_color);
 	}
+}
+
+void eListbox::animateStep()
+{
+    if (!m_animating)
+        return;
+
+    m_animation_offset += m_animation_step;
+
+    if (m_animation_offset >= m_animation_target_offset)
+    {
+        m_animating = false;
+        m_animation_offset = 0;
+
+        m_content->cursorMove(m_animation_direction);
+        m_selected = m_content->cursorGet();
+        m_top = m_selected - (m_selected % m_items_per_page);
+        moveSelection(justCheck);
+        return;
+    }
+
+    invalidate();  // trigger paint with new offset
+    m_animation_timer->start(20, true);  // schedule next frame
 }
 
 void eListbox::setLayoutMode(int mode)
@@ -198,11 +229,24 @@ void eListbox::moveSelection(long dir)
 		[[fallthrough]];
 	case pageDown:
 	case moveDown:
+	{
+		// Trigger animation if layout is horizontal and not already animating
+		if (m_layout_mode == LayoutHorizontal && !m_animating)
+		{
+			m_animation_direction = 1;  // moving right
+			m_animation_offset = 0;
+			m_animation_target_offset = m_itemwidth + m_margin.x();  // full item width + margin
+			m_animating = true;
+			m_animation_timer->start(20, true);  // 20ms per frame (~50fps)
+			return;  // delay cursorMove until animation completes
+		}
+	
 		do
 		{
 			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
 			if (!m_content->cursorValid())
-			{ // cursorMove reached end and left cursor position past the list. Must wrap around ?
+			{
+				// cursorMove reached end and left cursor position past the list. Must wrap around ?
 				if (m_enabled_wrap_around)
 				{
 					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
@@ -221,6 +265,8 @@ void eListbox::moveSelection(long dir)
 			newsel = m_content->cursorGet();
 		} while (newsel != oldsel && !m_content->currentCursorSelectable());
 		break;
+	}
+
 	case prevPage:
 	{
 		int pageind;
@@ -652,17 +698,16 @@ int eListbox::event(int event, void *data, void *data2)
 				painter.clip(paint_region);
 				if (m_style.m_background_color_global_set)
 					painter.setBackgroundColor(m_style.m_background_color_global);
-				else
-				{
-					if (m_style.m_background_color_set)
-						painter.setBackgroundColor(m_style.m_background_color);
-				}
+				else if (m_style.m_background_color_set)
+					painter.setBackgroundColor(m_style.m_background_color);
 				painter.clear();
 				painter.clippop();
 			}
 		}
 
-		for (int posx = 0, posy = 0, i = 0; (m_layout_mode == LayoutVertical) ? i <= m_items_per_page : i < m_items_per_page; posx += m_itemwidth + m_margin.x(), ++i)
+		for (int posx = 0, posy = 0, i = 0;
+			 (m_layout_mode == LayoutVertical) ? i <= m_items_per_page : i < m_items_per_page;
+			 posx += m_itemwidth + m_margin.x(), ++i)
 		{
 			if (m_style.m_background_color_set && m_style.m_background_color_rows_set)
 			{
@@ -671,7 +716,9 @@ int eListbox::event(int event, void *data, void *data2)
 					m_style.m_background_color = def_col;
 					m_style.m_background_col_current = m_style.m_background_color_rows;
 				}
-				else if (m_style.m_background_col_current == m_style.m_background_color_rows && last_col != m_style.m_background_color_rows && m_content->cursorValid() && i > 0)
+				else if (m_style.m_background_col_current == m_style.m_background_color_rows &&
+						 last_col != m_style.m_background_color_rows &&
+						 m_content->cursorValid() && i > 0)
 				{
 					m_style.m_background_color = m_style.m_background_color_rows;
 					m_style.m_background_col_current = def_col;
@@ -684,13 +731,10 @@ int eListbox::event(int event, void *data, void *data2)
 				last_col = m_style.m_background_color;
 			}
 
-			if (m_layout_mode == LayoutGrid && i > 0)
+			if (m_layout_mode == LayoutGrid && i > 0 && i % m_columns == 0)
 			{
-				if (i % m_columns == 0)
-				{
-					posy += m_itemheight + m_margin.y();
-					posx = 0;
-				}
+				posy += m_itemheight + m_margin.y();
+				posx = 0;
 			}
 			if (m_layout_mode == LayoutVertical)
 			{
@@ -703,7 +747,15 @@ int eListbox::event(int event, void *data, void *data2)
 			if (sel)
 				line = i;
 
-			entryrect = eRect(posx + xoffset, posy + yoffset, m_selectionwidth, m_selectionheight);
+			// Apply horizontal animation offset
+			int x_anim_shift = 0;
+			if (m_layout_mode == LayoutHorizontal && m_animating)
+				x_anim_shift = -m_animation_direction * m_animation_offset;
+
+			int draw_x = posx + xoffset + x_anim_shift;
+			int draw_y = posy + yoffset;
+
+			entryrect = eRect(draw_x, draw_y, m_selectionwidth, m_selectionheight);
 			gRegion entry_clip_rect = paint_region & entryrect;
 
 			if (!entry_clip_rect.empty())
@@ -711,50 +763,59 @@ int eListbox::event(int event, void *data, void *data2)
 				if (m_layout_mode != LayoutVertical && m_content->cursorValid())
 				{
 					if (i != (m_selected - m_top) || !m_selection_enabled)
-						m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), 0);
+						m_content->paint(painter, *style, ePoint(draw_x, draw_y), 0);
 				}
 				else if (m_layout_mode == LayoutVertical)
-					m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), sel);
+					m_content->paint(painter, *style, ePoint(draw_x, draw_y), sel);
 			}
 
 			m_content->cursorMove(+1);
-			entryrect.moveBy(ePoint(posx + xoffset, posy + yoffset));
 		}
 		m_content->cursorSaveLine(line);
 		m_content->cursorRestore();
+
 		if (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled && m_layout_mode != LayoutVertical)
 		{
 			ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-			int posx_sel = (m_layout_mode == LayoutGrid) ? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns) : (m_itemwidth + margin.x()) * (m_selected - m_top);
-			int posy_sel = (m_layout_mode == LayoutGrid) ? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns) : 0;
-			if (m_content)
+			int posx_sel = (m_layout_mode == LayoutGrid)
+				? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns)
+				: (m_itemwidth + margin.x()) * (m_selected - m_top);
+			int posy_sel = (m_layout_mode == LayoutGrid)
+				? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns)
+				: 0;
+
+			if (m_layout_mode == LayoutVertical)
 			{
-				if (m_layout_mode == LayoutVertical)
-				{
-					posx_sel = 0;
-					posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
-				}
-
-				if (m_style.m_shadow_set && m_style.m_shadow)
-				{
-					int shadow_x = posx_sel - (((m_selectionwidth + 40) - m_selectionwidth) / 2);
-					int shadow_y = posy_sel - (((m_selectionheight + 40) - m_selectionheight) / 2);
-					eRect rect(shadow_x + xoffset, shadow_y + yoffset, m_selectionwidth + 40, m_selectionheight + 40);
-
-					painter.clip(rect);
-					painter.blitScale(m_style.m_shadow, rect, rect, gPainter::BT_ALPHABLEND);
-					painter.clippop();
-				}
-
-				m_content->paint(painter, *style, ePoint(posx_sel + xoffset, posy_sel + yoffset), 1);
+				posx_sel = 0;
+				posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
 			}
+
+			int sel_x = posx_sel + xoffset;
+			int sel_y = posy_sel + yoffset;
+
+			if (m_layout_mode == LayoutHorizontal && m_animating)
+				sel_x += -m_animation_direction * m_animation_offset;
+
+			if (m_style.m_shadow_set && m_style.m_shadow)
+			{
+				int shadow_x = sel_x - (((m_selectionwidth + 40) - m_selectionwidth) / 2);
+				int shadow_y = sel_y - (((m_selectionheight + 40) - m_selectionheight) / 2);
+				eRect rect(shadow_x, shadow_y, m_selectionwidth + 40, m_selectionheight + 40);
+
+				painter.clip(rect);
+				painter.blitScale(m_style.m_shadow, rect, rect, gPainter::BT_ALPHABLEND);
+				painter.clippop();
+			}
+
+			m_content->paint(painter, *style, ePoint(sel_x, sel_y), 1);
 		}
 
-		// clear/repaint empty/unused space between scrollbar and listboxentrys
+		// Clear gap between scrollbar and list content (Vertical layout only)
 		if (m_scrollbar && m_scrollbar->isVisible() && !isTransparent() && m_layout_mode == LayoutVertical)
 		{
 			style->setStyle(painter, eWindowStyle::styleListboxNormal);
-			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset, 0), eSize(m_scrollbar_offset, m_scrollbar->size().height())));
+			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset, 0),
+							   eSize(m_scrollbar_offset, m_scrollbar->size().height())));
 			if (m_style.m_background_color_set)
 				painter.setBackgroundColor(m_style.m_background_color);
 			painter.clear();
@@ -775,6 +836,7 @@ int eListbox::event(int event, void *data, void *data2)
 			return 1;
 		}
 		return 0;
+
 	default:
 		return eWidget::event(event, data, data2);
 	}
