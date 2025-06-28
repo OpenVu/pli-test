@@ -232,12 +232,16 @@ void eListbox::moveSelection(long dir)
 		// Trigger animation if layout is horizontal and not already animating
 		if (m_layout_mode == LayoutHorizontal && !m_animating)
 		{
-			m_animation_direction = 1;  // moving right
-			m_animation_offset = 0;
-			m_animation_target_offset = m_itemwidth + m_margin.x();  // full item width + margin
-			m_animating = true;
-			m_animation_timer->start(20, true);  // 20ms per frame (~50fps)
-			return;  // delay cursorMove until animation completes
+			int visible_threshold = 3;  // cursor moves normally until index 3
+			if (m_selected >= visible_threshold)
+			{
+				m_animation_direction = 1;  // right
+				m_animation_offset = 0;
+				m_animation_target_offset = m_itemwidth + m_margin.x();
+				m_animating = true;
+				m_animation_timer->start(20, true);
+				return;
+			}
 		}
 	
 		do
