@@ -310,51 +310,81 @@ void eListbox::moveSelection(long dir)
 	    {
 	        if (m_layout_mode == LayoutHorizontal)
 	        {
-	            // If an animation is already in progress, do nothing to avoid interruption.
-	            if (m_animating) break;
+	            // --- Self-contained logic for Horizontal Layout ---
 
-	            // If the cursor is already on the last item, there's nowhere to move.
-	            if (oldsel == m_content->size() - 1) break;
+	            // If an animation is currently running, or we are at the end of the list, do nothing.
+	            if (m_animating) return;
+	            if (oldsel >= m_content->size() - 1) return;
 
-	            // Condition to determine if the list should slide.
-	            // It should only slide if the cursor is at or past index 3 AND the last item is not yet visible.
-	            bool should_slide = (oldsel >= 3) && (m_top + m_items_per_page < m_content->size());
+	            // Determine if we should stop sliding. This happens when the last item is visible.
+	            bool stop_sliding = (m_top + m_items_per_page >= m_content->size());
+				int old_top = m_top; // Store the list's position before any changes
 
-	            if (should_slide)
+	            if (oldsel < 3 || stop_sliding)
 	            {
-	                // --- SLIDING LOGIC ---
-	                // The list slides by incrementing the top-most visible item's index (m_top).
+	                // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT ---
+	                // This happens at the start of the list, OR after sliding has stopped.
+	                // The list position (m_top) is frozen, and only the selection moves.
+
+	                // Find the next selectable item
+	                do {
+	                    m_content->cursorMove(1);
+	                    newsel = m_content->cursorGet();
+	                } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	                m_selected = newsel;
+
+	                // At the very start of the list, m_top is 0. Otherwise, it's frozen.
+	                if (oldsel < 3) {
+						m_top = 0;
+					}
+
+	                // Manually trigger updates and redraws for the selection change
+	                selectionChanged();
+	                updateScrollBar();
+
+	                if (old_top != m_top) {
+						invalidate(); // Redraw everything if m_top changed
+					} else {
+						// Redraw just the old and new selected items for efficiency
+						ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
+						ePoint oldmargin = (oldsel > 0) ? m_margin : ePoint(0, 0);
+						int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
+						int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
+						int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
+						if (m_layout_mode == LayoutHorizontal)
+						{
+							gRegion inv = eRect((((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
+							inv |= eRect((((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
+							invalidate(inv);
+						}
+					}
+	            }
+	            else
+	            {
+	                // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
+	                // The list position slides left, and the selection stays visually fixed.
+
+	                // Update list position and selection
 	                m_top += 1;
-	                // The selected item is kept at a fixed visual position (index 3).
 	                m_selected = m_top + 3;
 	                m_content->cursorSet(m_selected);
 
-	                // Trigger the sliding animation.
-	                m_animation_direction = 1;  // moving right
+	                // Trigger the sliding animation
+	                m_animation_direction = 1;
 	                m_animation_offset = 0;
 	                m_animation_target_offset = m_itemwidth + m_margin.x();
 	                m_animating = true;
 	                m_animation_timer->start(20, true);
-
-	                invalidate(); // Request a repaint.
-	                return;       // Exit the function to let the animation handle drawing.
+	                invalidate(); // Redraw everything for the slide
 	            }
-	            else
-	            {
-	                // --- NORMAL CURSOR MOVEMENT LOGIC ---
-	                // This is executed when at the beginning of the list, or after sliding has stopped.
-	                // Move the content cursor one position forward.
-	                do
-	                {
-	                    m_content->cursorMove(1);
-	                    newsel = m_content->cursorGet();
-	                } while (newsel != oldsel && !m_content->currentCursorSelectable());
 
-	                // Allow the rest of the function to handle updating m_selected and m_top.
-	            }
+	            // CRITICAL: We must return here to prevent the generic logic after the switch
+	            // from running and breaking our horizontal list's state.
+	            return;
 	        }
-	        else // This is the original, unchanged logic for other layout modes (Vertical, Grid).
+	        else
 	        {
+	            // --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
 	            do
 	            {
 	                m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
