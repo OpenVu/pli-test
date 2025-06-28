@@ -230,22 +230,7 @@ void eListbox::moveSelection(long dir)
 	case pageDown:
 	case moveDown:
 	{
-		// Trigger animation only in horizontal layout and only when index >= 3
-		if (m_layout_mode == LayoutHorizontal && !m_animating)
-		{
-			const int visible_threshold = 3;
-			if (m_selected >= visible_threshold)
-			{
-				m_animation_direction = 1;  // moving right
-				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();  // slide width
-				m_animating = true;
-				m_animation_timer->start(20, true);  // start animation
-				return;  // delay actual selection move until animation completes
-			}
-		}
-	
-		// Normal movement without animation
+		// Move the selection first
 		do
 		{
 			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
@@ -272,9 +257,30 @@ void eListbox::moveSelection(long dir)
 			newsel = m_content->cursorGet();
 		} while (newsel != oldsel && !m_content->currentCursorSelectable());
 	
+		// Trigger animation only in horizontal layout and only when new index >= 3
+		if (m_layout_mode == LayoutHorizontal && !m_animating)
+		{
+			const int visible_threshold = 3;
+			if (newsel >= visible_threshold)
+			{
+				// Temporarily revert visual cursor to old position
+				m_content->cursorSet(oldsel);
+				m_selected = oldsel;
+	
+				m_animation_direction = 1;  // moving right
+				m_animation_offset = 0;
+				m_animation_target_offset = m_itemwidth + m_margin.x();  // slide width
+				m_animating = true;
+				m_animation_timer->start(20, true);  // start animation
+	
+				return;  // skip setting m_selected now, will be updated in animateStep()
+			}
+		}
+	
+		// No animation — set new selection directly
+		m_selected = newsel;
 		break;
 	}
-
 
 	case prevPage:
 	{
