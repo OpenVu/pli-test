@@ -311,7 +311,9 @@ void eListbox::moveSelection(long dir)
 	        if (m_layout_mode == LayoutHorizontal)
 	        {
 	            // --- Self-contained logic for Horizontal Layout ---
-
+			
+		    // ADD THIS LINE
+            	    eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());	
 	            // If an animation is currently running, or we are at the end of the list, do nothing.
 	            if (m_animating) return;
 	            if (oldsel >= m_content->size() - 1) return;
