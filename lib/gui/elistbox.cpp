@@ -58,7 +58,7 @@ void eListbox::setScrollbarMode(int mode)
 	}
 }
 
-void eListbox::animateStep()
+/* void eListbox::animateStep()
 {
 	if (!m_animating)
 		return;
@@ -80,6 +80,30 @@ void eListbox::animateStep()
 
 	invalidate();  // trigger repaint
 	m_animation_timer->start(20, true);  // continue animation
+} */
+
+void eListbox::animateStep()
+{
+    if (!m_animating)
+        return;
+
+    m_animation_offset += m_animation_step;
+
+    if (m_animation_offset >= m_animation_target_offset)
+    {
+        m_animating = false;
+        m_animation_offset = 0;
+
+        // Update top to slide the list left, keep cursor at index 3 relative to visible area
+        m_top += m_animation_direction;
+        m_selected = m_top + 3; // Fix cursor at index 3 relative to m_top
+        m_content->cursorSet(m_selected);
+        moveSelection(justCheck);
+        return;
+    }
+
+    invalidate();  // trigger repaint
+    m_animation_timer->start(20, true);  // continue animation
 }
 
 void eListbox::setLayoutMode(int mode)
@@ -228,7 +252,7 @@ void eListbox::moveSelection(long dir)
 			break;
 		[[fallthrough]];
 	case pageDown:
-	case moveDown:
+	/*case moveDown:
 	{
 		// Move the selection first
 		do
@@ -280,8 +304,63 @@ void eListbox::moveSelection(long dir)
 		// No animation — set new selection directly
 		m_selected = newsel;
 		break;
-	}
-
+	}*/
+	case moveDown:
+	    {
+	        // Move cursor up to index 3, then fix cursor and slide list
+	        if (m_layout_mode == LayoutHorizontal && oldsel < 3)
+	        {
+	            do
+	            {
+	                m_content->cursorMove(1);
+	                newsel = m_content->cursorGet();
+	            } while (newsel != oldsel && !m_content->currentCursorSelectable() && newsel < 3);
+	            m_selected = newsel;
+	        }
+	        else if (m_layout_mode == LayoutHorizontal)
+	        {
+	            // Fix cursor at index 3 relative to visible area, slide list left
+	            if (!m_animating)
+	            {
+	                m_animation_direction = 1;  // moving right
+	                m_animation_offset = 0;
+	                m_animation_target_offset = m_itemwidth + m_margin.x();
+	                m_animating = true;
+	                m_animation_timer->start(20, true);
+	                return;  // Animation will handle cursor and top update
+	            }
+	            m_selected = m_top + 3; // Ensure cursor stays at index 3
+	            m_content->cursorSet(m_selected);
+	        }
+	        else
+	        {
+	            do
+	            {
+	                m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+	                if (!m_content->cursorValid())
+	                {
+	                    if (m_enabled_wrap_around)
+	                    {
+	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                            m_content->cursorMove(-1);
+	                        else
+	                            m_content->cursorHome();
+	                    }
+	                    else
+	                    {
+	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                            m_content->cursorMove(-1);
+	                        else
+	                            m_content->cursorSet(oldsel);
+	                    }
+	                }
+	                newsel = m_content->cursorGet();
+	            } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	            m_selected = newsel;
+	        }
+	        break;
+	    }	
+	
 	case prevPage:
 	{
 		int pageind;
