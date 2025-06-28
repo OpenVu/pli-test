@@ -243,7 +243,7 @@ void eListbox::moveSelection(long dir)
 		[[fallthrough]];
 	case pageDown:
 		
-	case moveDown:
+	/*case moveDown:
 	    {
 	        // Move cursor up to index 3, then fix cursor and slide list
 	        if (m_layout_mode == LayoutHorizontal && oldsel < 3)
@@ -304,7 +304,64 @@ void eListbox::moveSelection(long dir)
 	            m_selected = newsel;
 	        }
 	        break;
-	    }	
+	    }*/
+
+	case moveDown:
+		{
+		    // Move the selection first
+		    do
+		    {
+		        m_content->cursorMove((m_layout_mode == LayoutGrid) ? m_columns : 1);
+		
+		        if (!m_content->cursorValid())
+		        {
+		            // Reached end — handle wrap-around or restore old position
+		            if (m_enabled_wrap_around)
+		            {
+		                if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid)
+		                    m_content->cursorMove(-1);
+		                else
+		                    m_content->cursorHome();
+		            }
+		            else
+		            {
+		                if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid)
+		                    m_content->cursorMove(-1);
+		                else
+		                    m_content->cursorSet(oldsel);
+		            }
+		        }
+		
+		        newsel = m_content->cursorGet();
+		    } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		
+		    // Check if we're at the last item before triggering animation
+		    bool is_last_item = (newsel >= m_content->size() - 1 || (m_last_selectable_item != -1 && newsel >= m_last_selectable_item));
+		
+		    // Trigger animation only in horizontal layout, when new index >= 3, and not at the last item
+		    if (m_layout_mode == LayoutHorizontal && !m_animating && !is_last_item)
+		    {
+		        const int visible_threshold = 3;
+		        if (newsel >= visible_threshold)
+		        {
+		            // Temporarily revert visual cursor to old position
+		            m_content->cursorSet(oldsel);
+		            m_selected = oldsel;
+		
+		            m_animation_direction = 1;  // moving right
+		            m_animation_offset = 0;
+		            m_animation_target_offset = m_itemwidth + m_margin.x();  // slide width
+		            m_animating = true;
+		            m_animation_timer->start(20, true);  // start animation
+		
+		            return;  // skip setting m_selected now, will be updated in animateStep()
+		        }
+		    }
+		
+		    // No animation or at the last item — set new selection directly
+		    m_selected = newsel;
+		    break;
+		}	
 	
 	case prevPage:
 	{
