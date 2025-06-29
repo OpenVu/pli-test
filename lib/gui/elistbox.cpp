@@ -332,12 +332,10 @@ void eListbox::moveSelection(long dir)
 	                m_content->cursorSet(m_content->size() - 1);
 	                m_selected = m_content->cursorGet();
 	                
-	                // Update scrollbar and trigger all necessary visual updates
+	                // Force complete visual update
 	                selectionChanged();
 	                updateScrollBar();
-	                
-	                // Force a redraw to ensure visual state is correct
-	                invalidate();
+	                invalidate(); // Force complete redraw
 	                
 	                return;
 	            }
@@ -366,6 +364,24 @@ void eListbox::moveSelection(long dir)
 	            // Check if we're at the end and should stop movement
 	            if (newsel >= m_content->size() - 1) {
 	                eDebug("[MyListbox-Debug] Reached last item, stopping all movement");
+	                
+	                // Stop any ongoing animation
+	                if (m_animating) {
+	                    eDebug("[MyListbox-Debug] Stopping animation at last item");
+	                    m_animating = false;
+	                    m_animation_offset = 0;
+	                    m_animation_timer->stop();
+	                }
+	                
+	                // Ensure cursor is properly set to the last item
+	                m_content->cursorSet(m_content->size() - 1);
+	                m_selected = m_content->cursorGet();
+	                
+	                // Force complete visual update
+	                selectionChanged();
+	                updateScrollBar();
+	                invalidate(); // Force complete redraw
+	                
 	                return;
 	            }
 	            
@@ -402,6 +418,10 @@ void eListbox::moveSelection(long dir)
 	                    m_animation_offset = 0;
 	                    m_animation_timer->stop();
 	                }
+	                
+	                // Ensure cursor is properly synchronized
+	                m_content->cursorSet(newsel);
+	                m_selected = newsel;
 	                
 	                selectionChanged();
 	                updateScrollBar();
