@@ -14,7 +14,7 @@ eListbox::eListbox(eWidget *parent) :
 	// NEW animation-related initializations
 	m_animation_timer(nullptr), m_animation_offset(0),
 	m_animation_target_offset(0), m_animation_step(20),
-	m_animating(false), m_animation_direction(0), m_post_animation_redraw(false)
+	m_animating(false), m_animation_direction(0)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
@@ -88,7 +88,6 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
-	m_post_animation_redraw = true; // Flag for post-animation redraw    
         
         // Ensure proper visual state after animation completes
         if (m_layout_mode == LayoutHorizontal) {
@@ -319,12 +318,11 @@ void eListbox::moveSelection(long dir)
 	        if (m_layout_mode == LayoutHorizontal)
 	        {
 	            // --- Self-contained logic for Horizontal Layout ---
-	            // Using the exact same technique as anim.html
 			
 		    // ADD THIS LINE
-            	    eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());	
-	            
-	            // Early check: if we're already at the last item, don't do anything
+            	    eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
+
+		    // Early check: if we're already at the last item, don't do anything
 	            if (oldsel >= m_content->size() - 1) {
 	                eDebug("[MyListbox-Debug] Already at last item (index %d), no movement", oldsel);
 	                
@@ -336,117 +334,120 @@ void eListbox::moveSelection(long dir)
 	                    m_animation_timer->stop();
 	                }
 	                
-	                // Ensure cursor is properly set to the last item
-	                m_content->cursorSet(m_content->size() - 1);
-	                m_selected = m_content->cursorGet();
+	                // Force a redraw to ensure visual state is correct
+	                invalidate();
 	                
-	                // Force complete visual update
-	                selectionChanged();
-	                updateScrollBar();
-	                invalidate(); // Force complete redraw
-	                
-	                return;
-	            }
-	            
-	            // If an animation is currently running, do nothing
-	            if (m_animating) return;
+	                return; // Already at the last item, don't move
+	            }	
 
-	            // Using anim.html technique:
-	            // 1. Move cursor to next item
-	            m_content->cursorMove(1);
-	            int newsel = m_content->cursorGet();
-	            m_selected = newsel;
-	            
-	            // 2. Calculate new top index using anim.html formula
-	            const int slideThreshold = 3; // Cursor stays at position 3 relative to visible area
-	            const int maxTopIndex = std::max(0, m_content->size() - m_items_per_page); // Last possible first visible item
-	            
-	            int newTopIndex = 0;
-	            if (newsel >= slideThreshold) {
-	                newTopIndex = std::min(newsel - slideThreshold + 1, maxTopIndex);
-	            }
-	            
-	            eDebug("[MyListbox-Debug] anim.html technique: newsel=%d, slideThreshold=%d, maxTopIndex=%d, newTopIndex=%d, current_m_top=%d", 
-	                   newsel, slideThreshold, maxTopIndex, newTopIndex, m_top);
-	            
-	            // Check if we're at the end and should stop movement
-	            if (newsel >= m_content->size() - 1) {
-	                eDebug("[MyListbox-Debug] Reached last item, stopping all movement");
-	                
-	                // Stop any ongoing animation
-	                if (m_animating) {
-	                    eDebug("[MyListbox-Debug] Stopping animation at last item");
-	                    m_animating = false;
-	                    m_animation_offset = 0;
-	                    m_animation_timer->stop();
-	                }
-	                
-	                // Ensure cursor is properly set to the last item
-	                m_content->cursorSet(m_content->size() - 1);
-	                m_selected = m_content->cursorGet();
-	                
-	                // Force complete visual update
+	            // Modified condition: Stop sliding when the last item index becomes visible
+	            // The last item becomes visible when m_top + items_per_page >= content->size()
+	            // This means m_top >= content->size() - items_per_page
+	            // More explicitly: stop when the last item (at index size()-1) is already visible
+			
+	            int last_item_index = m_content->size() - 1;
+	            int last_visible_index = m_top + m_items_per_page - 1;
+			
+	            // Stop sliding BEFORE the last item becomes visible
+	            // This means stop when the next slide would make the last item visible
+			
+	            bool stop_sliding = (last_visible_index >= last_item_index - 1);
+		    int old_top = m_top; // Store the list's position before any changes
+
+	            // Add debug output to understand the sliding behavior
+	            eDebug("[MyListbox-Debug] stop_sliding=%d, m_top=%d, content->size()=%d, items_per_page=%d, last_visible_index=%d, last_item_index=%d", 
+	                   stop_sliding, m_top, m_content->size(), m_items_per_page, last_visible_index, last_item_index);
+			
+	            if (oldsel < 3 || stop_sliding)
+	            {
+	                // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT ---
+	                // This happens at the start of the list, OR after sliding has stopped.
+	                // The list position (m_top) is frozen, and only the selection moves.
+
+			eDebug("[MyListbox-Debug] Normal movement check: oldsel=%d, content->size()=%d, condition=%d", 
+	                       oldsel, m_content->size(), (oldsel >= m_content->size() - 1));
+
+	                // Check if we're already at the last item - if so, don't move
+	                if (oldsel >= m_content->size() - 1) {
+	                    eDebug("[MyListbox-Debug] Cursor at last item (index %d), stopping movement", oldsel);
+	                    
+	                    // Stop any ongoing animation to prevent visual glitches
+	                    if (m_animating) {
+	                        eDebug("[MyListbox-Debug] Stopping ongoing animation");
+	                        m_animating = false;
+	                        m_animation_offset = 0;
+	                        m_animation_timer->stop();
+	                    }
+	                    
+	                    // Force a redraw to ensure visual state is correct
+	                    invalidate();
+	                    
+	                    return; // Already at the last item, don't move
+	                }    
+
+	                // Find the next selectable item
+	                do {
+	                    m_content->cursorMove(1);
+	                    newsel = m_content->cursorGet();
+	                } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	                m_selected = newsel;
+
+			eDebug("[MyListbox-Debug] Normal cursor movement: oldsel=%d -> newsel=%d, m_top=%d", oldsel, newsel, m_top);    
+
+	                // At the very start of the list, m_top is 0. Otherwise, it's frozen.
+	                if (oldsel < 3) {
+						m_top = 0;
+					}
+
+	                // Manually trigger updates and redraws for the selection change
 	                selectionChanged();
 	                updateScrollBar();
-	                invalidate(); // Force complete redraw
-	                
-	                return;
+
+	                if (old_top != m_top) {
+						invalidate(); // Redraw everything if m_top changed
+					} else {
+						// Redraw just the old and new selected items for efficiency
+						ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
+						ePoint oldmargin = (oldsel > 0) ? m_margin : ePoint(0, 0);
+						int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
+						int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
+						int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
+						if (m_layout_mode == LayoutHorizontal)
+						{
+							gRegion inv = eRect((((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
+							inv |= eRect((((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
+							invalidate(inv);
+						}
+					}
 	            }
-	            
-	            // 3. Update m_top if it changed (this triggers sliding)
-	            if (newTopIndex != m_top) {
-	                int old_top = m_top;
-	                m_top = newTopIndex;
-	                
-	                eDebug("[MyListbox-Debug] Sliding: old_top=%d -> new_top=%d", old_top, newTopIndex);
-	                
-	                // Stop any ongoing animation first
-	                if (m_animating) {
-	                    eDebug("[MyListbox-Debug] Stopping ongoing animation before new slide");
-	                    m_animating = false;
-	                    m_animation_offset = 0;
-	                    m_animation_timer->stop();
+	            else
+	            {
+	                // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
+	                // The list position slides left, and the selection stays visually fixed.
+
+			eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
+
+	                // Check if the next slide would make the last item visible
+	                int next_top = m_top + 1;
+	                int next_last_visible = next_top + m_items_per_page - 1;
+	                if (next_last_visible >= last_item_index) {
+	                    eDebug("[MyListbox-Debug] Next slide would reach last item, stopping sliding");
+	                    return; // Don't start sliding if we would reach the last item
 	                }
-	                
-	                // Trigger smooth sliding animation
-	                eDebug("[MyListbox-Debug] Starting smooth sliding animation");
-			// Ensure cursor is properly set before animation
-	                m_content->cursorSet(newsel);
-	                m_selected = newsel;    
+	                // Update list position and selection
+	                m_top += 1;
+	                m_selected = m_top + 3;
+	                m_content->cursorSet(m_selected);
+
+			eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);    
+
+	                // Trigger the sliding animation
 	                m_animation_direction = 1;
 	                m_animation_offset = 0;
 	                m_animation_target_offset = m_itemwidth + m_margin.x();
 	                m_animating = true;
 	                m_animation_timer->start(20, true);
-	                invalidate(); // Start animation
-	            } else {
-	                // No sliding needed, just update selection
-	                eDebug("[MyListbox-Debug] No sliding needed, just selection update");
-	                
-	                // Stop any ongoing animation
-	                if (m_animating) {
-	                    eDebug("[MyListbox-Debug] Stopping animation for selection update");
-	                    m_animating = false;
-	                    m_animation_offset = 0;
-	                    m_animation_timer->stop();
-	                }
-	                
-	                // Ensure cursor is properly synchronized
-	                m_content->cursorSet(newsel);
-	                m_selected = newsel;
-	                
-	                selectionChanged();
-	                updateScrollBar();
-	                
-	                // Redraw just the old and new selected items for efficiency
-	                ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-	                ePoint oldmargin = (oldsel > 0) ? m_margin : ePoint(0, 0);
-	                int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
-	                int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
-	                int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
-	                gRegion inv = eRect((((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
-	                inv |= eRect((((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
-	                invalidate(inv);
+	                invalidate(); // Redraw everything for the slide
 	            }
 
 	            // CRITICAL: We must return here to prevent the generic logic after the switch
@@ -978,16 +979,7 @@ int eListbox::event(int event, void *data, void *data2)
 			entryrect = eRect(draw_x, draw_y, m_selectionwidth, m_selectionheight);
 			gRegion entry_clip_rect = paint_region & entryrect;
 
-			//if (!entry_clip_rect.empty())
-			// During horizontal animation, allow items outside visible area to be drawn
-			bool should_draw = !entry_clip_rect.empty();
-			if (m_layout_mode == LayoutHorizontal && (m_animating || m_post_animation_redraw)) {
-				// Allow drawing if item is within reasonable bounds (including off-screen items)
-				int container_width = size().width();
-				should_draw = (draw_x + m_selectionwidth > -container_width && draw_x < container_width * 2);
-			}
-
-			if (should_draw)
+			if (!entry_clip_rect.empty())
 			{
 				if (m_layout_mode != LayoutVertical && m_content->cursorValid())
 				{
@@ -1052,11 +1044,6 @@ int eListbox::event(int event, void *data, void *data2)
 			painter.clear();
 			painter.clippop();
 		}
-		// Reset post-animation flag after redraw
-		if (m_post_animation_redraw) {
-			m_post_animation_redraw = false;
-		}
-
 		return 0;
 	}
 
