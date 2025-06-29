@@ -58,25 +58,6 @@ void eListbox::setScrollbarMode(int mode)
 	}
 }
 
-/*void eListbox::animateStep()
-{
-    if (!m_animating)
-        return;
-
-    m_animation_offset += m_animation_step;
-
-    if (m_animation_offset >= m_animation_target_offset)
-    {
-        m_animating = false;
-        m_animation_offset = 0;
-        // m_top and m_selected are updated in moveSelection
-        return;
-    }
-
-    invalidate();  // trigger repaint
-    m_animation_timer->start(20, true);  // continue animation
-}*/
-
 void eListbox::animateStep()
 {
     if (!m_animating)
@@ -88,14 +69,7 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
-        
-        // Ensure proper visual state after animation completes
-        if (m_layout_mode == LayoutHorizontal) {
-            selectionChanged();
-            updateScrollBar();
-	    invalidate(); // Force final redraw	
-        }
-        
+        // m_top and m_selected are updated in moveSelection
         return;
     }
 
