@@ -327,7 +327,9 @@ void eListbox::moveSelection(long dir)
 	            // More explicitly: stop when the last item (at index size()-1) is already visible
 	            int last_item_index = m_content->size() - 1;
 	            int last_visible_index = m_top + m_items_per_page - 1;
-	            bool stop_sliding = (last_visible_index >= last_item_index);
+	            // Stop sliding BEFORE the last item becomes visible
+	            // This means stop when the next slide would make the last item visible
+	            bool stop_sliding = (last_visible_index >= last_item_index - 1);
 		    int old_top = m_top; // Store the list's position before any changes
 
 	            // Add debug output to understand the sliding behavior
