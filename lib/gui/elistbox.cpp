@@ -313,22 +313,28 @@ void eListbox::moveSelection(long dir)
 	            // --- Self-contained logic for Horizontal Layout ---
 			
 		    // ADD THIS LINE
-            	    eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());	
+            	    eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
+
+		    // Early check: if we're already at the last item, don't do anything
+	            if (oldsel >= m_content->size() - 1) {
+	                eDebug("[MyListbox-Debug] Already at last item (index %d), no movement", oldsel);
+	                return;
+	            }	
 	            // If an animation is currently running, or we are at the end of the list, do nothing.
 	            if (m_animating) return;
-	            if (oldsel >= m_content->size() - 1) return;
+	            //if (oldsel >= m_content->size() - 1) return;
 
-	            // This condition is now corrected. It stops the slide if m_top has reached its maximum possible value.
-	            //bool stop_sliding = (m_content->size() > m_items_per_page) ? (m_top >= m_content->size() - m_items_per_page) : true;
-		    //int old_top = m_top; // Store the list's position before any changes
-		    // Modified condition: Stop sliding when the last item index becomes visible
+	            // Modified condition: Stop sliding when the last item index becomes visible
 	            // The last item becomes visible when m_top + items_per_page >= content->size()
 	            // This means m_top >= content->size() - items_per_page
 	            // More explicitly: stop when the last item (at index size()-1) is already visible
+			
 	            int last_item_index = m_content->size() - 1;
 	            int last_visible_index = m_top + m_items_per_page - 1;
+			
 	            // Stop sliding BEFORE the last item becomes visible
 	            // This means stop when the next slide would make the last item visible
+			
 	            bool stop_sliding = (last_visible_index >= last_item_index - 1);
 		    int old_top = m_top; // Store the list's position before any changes
 
@@ -348,6 +354,15 @@ void eListbox::moveSelection(long dir)
 	                // Check if we're already at the last item - if so, don't move
 	                if (oldsel >= m_content->size() - 1) {
 	                    eDebug("[MyListbox-Debug] Cursor at last item (index %d), stopping movement", oldsel);
+	                    
+	                    // Stop any ongoing animation to prevent visual glitches
+	                    if (m_animating) {
+	                        eDebug("[MyListbox-Debug] Stopping ongoing animation");
+	                        m_animating = false;
+	                        m_animation_offset = 0;
+	                        m_animation_timer->stop();
+	                    }
+	                    
 	                    return; // Already at the last item, don't move
 	                }    
 
