@@ -319,9 +319,21 @@ void eListbox::moveSelection(long dir)
 	            if (oldsel >= m_content->size() - 1) return;
 
 	            // This condition is now corrected. It stops the slide if m_top has reached its maximum possible value.
-	            bool stop_sliding = (m_content->size() > m_items_per_page) ? (m_top >= m_content->size() - m_items_per_page) : true;
-				int old_top = m_top; // Store the list's position before any changes
+	            //bool stop_sliding = (m_content->size() > m_items_per_page) ? (m_top >= m_content->size() - m_items_per_page) : true;
+		    //int old_top = m_top; // Store the list's position before any changes
+		    // Modified condition: Stop sliding when the last item index becomes visible
+	            // The last item becomes visible when m_top + items_per_page >= content->size()
+	            // This means m_top >= content->size() - items_per_page
+	            // More explicitly: stop when the last item (at index size()-1) is already visible
+	            int last_item_index = m_content->size() - 1;
+	            int last_visible_index = m_top + m_items_per_page - 1;
+	            bool stop_sliding = (last_visible_index >= last_item_index);
+		    int old_top = m_top; // Store the list's position before any changes
 
+	            // Add debug output to understand the sliding behavior
+	            eDebug("[MyListbox-Debug] stop_sliding=%d, m_top=%d, content->size()=%d, items_per_page=%d, last_visible_index=%d, last_item_index=%d", 
+	                   stop_sliding, m_top, m_content->size(), m_items_per_page, last_visible_index, last_item_index);
+			
 	            if (oldsel < 3 || stop_sliding)
 	            {
 	                // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT ---
