@@ -93,6 +93,7 @@ void eListbox::animateStep()
         if (m_layout_mode == LayoutHorizontal) {
             selectionChanged();
             updateScrollBar();
+	    invalidate(); // Force final redraw	
         }
         
         return;
@@ -408,6 +409,9 @@ void eListbox::moveSelection(long dir)
 	                
 	                // Trigger smooth sliding animation
 	                eDebug("[MyListbox-Debug] Starting smooth sliding animation");
+			// Ensure cursor is properly set before animation
+	                m_content->cursorSet(newsel);
+	                m_selected = newsel;    
 	                m_animation_direction = 1;
 	                m_animation_offset = 0;
 	                m_animation_target_offset = m_itemwidth + m_margin.x();
