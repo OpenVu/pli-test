@@ -14,7 +14,7 @@ eListbox::eListbox(eWidget *parent) :
 	// NEW animation-related initializations
 	m_animation_timer(nullptr), m_animation_offset(0),
 	m_animation_target_offset(0), m_animation_step(20),
-	m_animating(false), m_animation_direction(0)
+	m_animating(false), m_animation_direction(0), m_post_animation_redraw(false)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
@@ -88,6 +88,7 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
+	m_post_animation_redraw = true; // Flag for post-animation redraw    
         
         // Ensure proper visual state after animation completes
         if (m_layout_mode == LayoutHorizontal) {
@@ -977,7 +978,16 @@ int eListbox::event(int event, void *data, void *data2)
 			entryrect = eRect(draw_x, draw_y, m_selectionwidth, m_selectionheight);
 			gRegion entry_clip_rect = paint_region & entryrect;
 
-			if (!entry_clip_rect.empty())
+			//if (!entry_clip_rect.empty())
+			// During horizontal animation, allow items outside visible area to be drawn
+			bool should_draw = !entry_clip_rect.empty();
+			if (m_layout_mode == LayoutHorizontal && (m_animating || m_post_animation_redraw)) {
+				// Allow drawing if item is within reasonable bounds (including off-screen items)
+				int container_width = size().width();
+				should_draw = (draw_x + m_selectionwidth > -container_width && draw_x < container_width * 2);
+			}
+
+			if (should_draw)
 			{
 				if (m_layout_mode != LayoutVertical && m_content->cursorValid())
 				{
@@ -1041,6 +1051,10 @@ int eListbox::event(int event, void *data, void *data2)
 				painter.setBackgroundColor(m_style.m_background_color);
 			painter.clear();
 			painter.clippop();
+		}
+		// Reset post-animation flag after redraw
+		if (m_post_animation_redraw) {
+			m_post_animation_redraw = false;
 		}
 
 		return 0;
