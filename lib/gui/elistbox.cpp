@@ -677,7 +677,7 @@ void eListbox::moveSelection(long dir)
 	}
 
 	// if it is, then the old selection clip is irrelevant, clear it or we'll get artifacts
-	if (m_top != oldtop && m_content)
+	if (m_top != oldtop && m_content && !m_animating)
 		m_content->resetClip();
 
 	if (oldsel != m_selected)
