@@ -342,7 +342,10 @@ void eListbox::moveSelection(long dir)
 	                // This happens at the start of the list, OR after sliding has stopped.
 	                // The list position (m_top) is frozen, and only the selection moves.
 
-			// Check if we're already at the last item - if so, don't move
+			eDebug("[MyListbox-Debug] Normal movement check: oldsel=%d, content->size()=%d, condition=%d", 
+	                       oldsel, m_content->size(), (oldsel >= m_content->size() - 1));
+
+	                // Check if we're already at the last item - if so, don't move
 	                if (oldsel >= m_content->size() - 1) {
 	                    eDebug("[MyListbox-Debug] Cursor at last item (index %d), stopping movement", oldsel);
 	                    return; // Already at the last item, don't move
@@ -354,6 +357,8 @@ void eListbox::moveSelection(long dir)
 	                    newsel = m_content->cursorGet();
 	                } while (newsel != oldsel && !m_content->currentCursorSelectable());
 	                m_selected = newsel;
+
+			eDebug("[MyListbox-Debug] Normal cursor movement: oldsel=%d -> newsel=%d, m_top=%d", oldsel, newsel, m_top);    
 
 	                // At the very start of the list, m_top is 0. Otherwise, it's frozen.
 	                if (oldsel < 3) {
@@ -386,10 +391,14 @@ void eListbox::moveSelection(long dir)
 	                // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
 	                // The list position slides left, and the selection stays visually fixed.
 
+			eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);    
+
 	                // Update list position and selection
 	                m_top += 1;
 	                m_selected = m_top + 3;
 	                m_content->cursorSet(m_selected);
+
+			eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);    
 
 	                // Trigger the sliding animation
 	                m_animation_direction = 1;
