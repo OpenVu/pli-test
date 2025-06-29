@@ -327,9 +327,8 @@ void eListbox::moveSelection(long dir)
 		
 		        if (oldsel < 3 || stop_sliding)
 		        {
-		            // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT ---
-		            eDebug("[MyListbox-Debug] Normal movement check: oldsel=%d, content->size()=%d, condition=%d", 
-		                   oldsel, m_content->size(), (oldsel >= m_content->size() - 1));
+		            // --- Updated Logic for Handling Stop Sliding ---
+		            eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
 		
 		            // Clear the previous selection area
 		            ePoint oldmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
@@ -348,12 +347,12 @@ void eListbox::moveSelection(long dir)
 		                invalidate(clear_region); // Clear previous selection
 		            }
 		
-		            // Move cursor to the next index
+		            // Move the cursor incrementally to the next index
 		            if (m_selected < m_content->size() - 1)
 		            {
-		                m_selected++;
-		                m_content->cursorSet(m_selected);
-		                eDebug("[MyListbox-Debug] Cursor moved to index: %d", m_selected);
+		                m_content->cursorMove(1); // Move to the next item
+		                m_selected = m_content->cursorGet();
+		                eDebug("[MyListbox-Debug] Cursor moved incrementally to index: %d", m_selected);
 		            }
 		
 		            // Stop any ongoing animation
@@ -364,7 +363,7 @@ void eListbox::moveSelection(long dir)
 		                m_animation_timer->stop();
 		            }
 		
-		            // Trigger updates and redraws
+		            // Trigger updates and redraws for the new position
 		            selectionChanged();
 		            updateScrollBar();
 		
@@ -439,6 +438,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 
 
