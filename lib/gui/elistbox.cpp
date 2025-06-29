@@ -342,6 +342,12 @@ void eListbox::moveSelection(long dir)
 	                // This happens at the start of the list, OR after sliding has stopped.
 	                // The list position (m_top) is frozen, and only the selection moves.
 
+			// Check if we're already at the last item - if so, don't move
+	                if (oldsel >= m_content->size() - 1) {
+	                    eDebug("[MyListbox-Debug] Cursor at last item (index %d), stopping movement", oldsel);
+	                    return; // Already at the last item, don't move
+	                }    
+
 	                // Find the next selectable item
 	                do {
 	                    m_content->cursorMove(1);
