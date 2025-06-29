@@ -291,7 +291,7 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // Debug information
+		        // --- Self-contained logic for Horizontal Layout ---
 		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
 		
 		        // Early check: if we're already at the last item, don't do anything
@@ -322,15 +322,31 @@ void eListbox::moveSelection(long dir)
 		        bool stop_sliding = (last_visible_index >= last_item_index - 1);
 		        int old_top = m_top; // Store the list's position before any changes
 		
-		        // Add debug output to understand the sliding behavior
 		        eDebug("[MyListbox-Debug] stop_sliding=%d, m_top=%d, content->size()=%d, items_per_page=%d, last_visible_index=%d, last_item_index=%d", 
 		               stop_sliding, m_top, m_content->size(), m_items_per_page, last_visible_index, last_item_index);
 		
 		        if (oldsel < 3 || stop_sliding)
 		        {
-		            // Normal cursor movement when sliding stops or at the start
+		            // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT ---
 		            eDebug("[MyListbox-Debug] Normal movement check: oldsel=%d, content->size()=%d, condition=%d", 
 		                   oldsel, m_content->size(), (oldsel >= m_content->size() - 1));
+		
+		            // Clear the previous selection area
+		            ePoint oldmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
+		            int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
+		            int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
+		            int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
+		
+		            if (m_layout_mode == LayoutHorizontal)
+		            {
+		                gRegion clear_region = eRect(
+		                    (((m_itemwidth + oldmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset,
+		                    shadow_offset_y,
+		                    m_selectionwidth + shadow_size,
+		                    m_selectionheight + shadow_size
+		                );
+		                invalidate(clear_region); // Clear previous selection
+		            }
 		
 		            // Move cursor to the next index
 		            if (m_selected < m_content->size() - 1)
@@ -360,32 +376,30 @@ void eListbox::moveSelection(long dir)
 		            {
 		                // Efficient redraw of old and new selected items
 		                ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-		                ePoint oldmargin = (oldsel > 0) ? m_margin : ePoint(0, 0);
-		                int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
-		                int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
-		                int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
-		                if (m_layout_mode == LayoutHorizontal)
-		                {
-		                    gRegion inv = eRect((((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
-		                    inv |= eRect((((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset, shadow_offset_y, m_selectionwidth + shadow_size, m_selectionheight + shadow_size);
-		                    invalidate(inv);
-		                }
+		                gRegion new_region = eRect(
+		                    (((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset,
+		                    shadow_offset_y,
+		                    m_selectionwidth + shadow_size,
+		                    m_selectionheight + shadow_size
+		                );
+		                invalidate(new_region);
 		            }
 		
 		            return; // Exit early
 		        }
 		        else
 		        {
-		            // Sliding list movement when sliding is still active
+		            // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
 		            eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
 		
+		            // Update list position and selection
 		            m_top += 1;
 		            m_selected = m_top + 3;
 		            m_content->cursorSet(m_selected);
 		
 		            eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
 		
-		            // Trigger sliding animation
+		            // Trigger the sliding animation
 		            m_animation_direction = 1;
 		            m_animation_offset = 0;
 		            m_animation_target_offset = m_itemwidth + m_margin.x();
@@ -398,7 +412,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    else
 		    {
-		        // Original logic for other layout modes (Vertical, Grid)
+		        // --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
 		        do
 		        {
 		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
@@ -425,6 +439,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 
 	case prevPage:
