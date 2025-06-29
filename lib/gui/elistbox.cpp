@@ -400,13 +400,11 @@ void eListbox::moveSelection(long dir)
 	                    m_animation_timer->stop();
 	                }
 	                
-	                // Trigger the sliding animation
-	                m_animation_direction = 1;
-	                m_animation_offset = 0;
-	                m_animation_target_offset = m_itemwidth + m_margin.x();
-	                m_animating = true;
-	                m_animation_timer->start(20, true);
-	                invalidate(); // Redraw everything for the slide
+	                // Direct position update (no animation) - like anim.html
+	                eDebug("[MyListbox-Debug] Direct position update - no animation");
+	                selectionChanged();
+	                updateScrollBar();
+	                invalidate(); // Direct redraw
 	            } else {
 	                // No sliding needed, just update selection
 	                eDebug("[MyListbox-Debug] No sliding needed, just selection update");
