@@ -353,15 +353,21 @@ void eListbox::moveSelection(long dir)
 	            
 	            // 2. Calculate new top index using anim.html formula
 	            const int slideThreshold = 3; // Cursor stays at position 3 relative to visible area
-	            const int maxTopIndex = m_content->size() - m_items_per_page; // Last possible first visible item
+	            const int maxTopIndex = std::max(0, m_content->size() - m_items_per_page); // Last possible first visible item
 	            
 	            int newTopIndex = 0;
 	            if (newsel >= slideThreshold) {
 	                newTopIndex = std::min(newsel - slideThreshold + 1, maxTopIndex);
 	            }
 	            
-	            eDebug("[MyListbox-Debug] anim.html technique: newsel=%d, slideThreshold=%d, maxTopIndex=%d, newTopIndex=%d", 
-	                   newsel, slideThreshold, maxTopIndex, newTopIndex);
+	            eDebug("[MyListbox-Debug] anim.html technique: newsel=%d, slideThreshold=%d, maxTopIndex=%d, newTopIndex=%d, current_m_top=%d", 
+	                   newsel, slideThreshold, maxTopIndex, newTopIndex, m_top);
+	            
+	            // Check if we're at the end and should stop movement
+	            if (newsel >= m_content->size() - 1) {
+	                eDebug("[MyListbox-Debug] Reached last item, stopping all movement");
+	                return;
+	            }
 	            
 	            // 3. Update m_top if it changed (this triggers sliding)
 	            if (newTopIndex != m_top) {
@@ -369,6 +375,14 @@ void eListbox::moveSelection(long dir)
 	                m_top = newTopIndex;
 	                
 	                eDebug("[MyListbox-Debug] Sliding: old_top=%d -> new_top=%d", old_top, newTopIndex);
+	                
+	                // Stop any ongoing animation first
+	                if (m_animating) {
+	                    eDebug("[MyListbox-Debug] Stopping ongoing animation before new slide");
+	                    m_animating = false;
+	                    m_animation_offset = 0;
+	                    m_animation_timer->stop();
+	                }
 	                
 	                // Trigger the sliding animation
 	                m_animation_direction = 1;
@@ -380,6 +394,15 @@ void eListbox::moveSelection(long dir)
 	            } else {
 	                // No sliding needed, just update selection
 	                eDebug("[MyListbox-Debug] No sliding needed, just selection update");
+	                
+	                // Stop any ongoing animation
+	                if (m_animating) {
+	                    eDebug("[MyListbox-Debug] Stopping animation for selection update");
+	                    m_animating = false;
+	                    m_animation_offset = 0;
+	                    m_animation_timer->stop();
+	                }
+	                
 	                selectionChanged();
 	                updateScrollBar();
 	                
