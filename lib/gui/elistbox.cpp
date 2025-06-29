@@ -69,7 +69,7 @@ void eListbox::setScrollbarMode(int mode)
     {
         m_animating = false;
         m_animation_offset = 0;
-        // Update completed in moveSelection, no further updates needed here
+        // m_top and m_selected are updated in moveSelection
         return;
     }
 
@@ -88,7 +88,13 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
-        // m_top and m_selected are updated in moveSelection
+        
+        // Ensure proper visual state after animation completes
+        if (m_layout_mode == LayoutHorizontal) {
+            selectionChanged();
+            updateScrollBar();
+        }
+        
         return;
     }
 
@@ -400,11 +406,14 @@ void eListbox::moveSelection(long dir)
 	                    m_animation_timer->stop();
 	                }
 	                
-	                // Direct position update (no animation) - like anim.html
-	                eDebug("[MyListbox-Debug] Direct position update - no animation");
-	                selectionChanged();
-	                updateScrollBar();
-	                invalidate(); // Direct redraw
+	                // Trigger smooth sliding animation
+	                eDebug("[MyListbox-Debug] Starting smooth sliding animation");
+	                m_animation_direction = 1;
+	                m_animation_offset = 0;
+	                m_animation_target_offset = m_itemwidth + m_margin.x();
+	                m_animating = true;
+	                m_animation_timer->start(20, true);
+	                invalidate(); // Start animation
 	            } else {
 	                // No sliding needed, just update selection
 	                eDebug("[MyListbox-Debug] No sliding needed, just selection update");
