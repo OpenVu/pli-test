@@ -318,11 +318,20 @@ void eListbox::moveSelection(long dir)
 		    // Early check: if we're already at the last item, don't do anything
 	            if (oldsel >= m_content->size() - 1) {
 	                eDebug("[MyListbox-Debug] Already at last item (index %d), no movement", oldsel);
-	                return;
+	                
+	                // Stop any ongoing animation to prevent visual glitches
+	                if (m_animating) {
+	                    eDebug("[MyListbox-Debug] Stopping ongoing animation at last item");
+	                    m_animating = false;
+	                    m_animation_offset = 0;
+	                    m_animation_timer->stop();
+	                }
+	                
+	                // Force a redraw to ensure visual state is correct
+	                invalidate();
+	                
+	                return; // Already at the last item, don't move
 	            }	
-	            // If an animation is currently running, or we are at the end of the list, do nothing.
-	            if (m_animating) return;
-	            //if (oldsel >= m_content->size() - 1) return;
 
 	            // Modified condition: Stop sliding when the last item index becomes visible
 	            // The last item becomes visible when m_top + items_per_page >= content->size()
@@ -362,6 +371,9 @@ void eListbox::moveSelection(long dir)
 	                        m_animation_offset = 0;
 	                        m_animation_timer->stop();
 	                    }
+	                    
+	                    // Force a redraw to ensure visual state is correct
+	                    invalidate();
 	                    
 	                    return; // Already at the last item, don't move
 	                }    
@@ -406,8 +418,15 @@ void eListbox::moveSelection(long dir)
 	                // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
 	                // The list position slides left, and the selection stays visually fixed.
 
-			eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);    
+			eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
 
+	                // Check if the next slide would make the last item visible
+	                int next_top = m_top + 1;
+	                int next_last_visible = next_top + m_items_per_page - 1;
+	                if (next_last_visible >= last_item_index) {
+	                    eDebug("[MyListbox-Debug] Next slide would reach last item, stopping sliding");
+	                    return; // Don't start sliding if we would reach the last item
+	                }
 	                // Update list position and selection
 	                m_top += 1;
 	                m_selected = m_top + 3;
