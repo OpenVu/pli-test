@@ -271,7 +271,6 @@ private:
 	int m_animation_step;
 	bool m_animating;
 	int m_animation_direction;
-	bool m_post_animation_redraw;
 #endif
 };
 
