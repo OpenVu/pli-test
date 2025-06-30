@@ -255,7 +255,7 @@ void eListbox::moveSelection(long dir)
 		[[fallthrough]];
 	case pageDown:
 		
-	/*case moveDown:
+	case moveDown:
 	    {
 	        // Move cursor up to index 3, then fix cursor and slide list
 	        if (m_layout_mode == LayoutHorizontal && oldsel < 3)
@@ -316,9 +316,9 @@ void eListbox::moveSelection(long dir)
 	            m_selected = newsel;
 	        }
 	        break;
-	    }*/
+	    }
 
-	case moveDown:
+	/*case moveDown:
 	{
 		if (m_layout_mode == LayoutHorizontal)
 		{
@@ -412,7 +412,7 @@ void eListbox::moveSelection(long dir)
 			m_selected = newsel;
 		}
 		break;
-	}
+	}*/
 
 
 
