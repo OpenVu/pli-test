@@ -502,16 +502,17 @@ void eListbox::moveSelection(long dir)
 	/* now, look wether the current selection is out of screen */
 	m_selected = m_content->cursorGet();
 	if (m_layout_mode == LayoutHorizontal) {
-	    int min_top = m_content->size() - m_items_per_page;
-	    if (min_top < 0) min_top = 0;
-	    // If m_top is at or past min_top, keep it fixed
-	    if (m_top >= min_top) {
-	        m_top = min_top;
-	    } else {
-	        m_top = m_selected - (m_selected % m_items_per_page);
-	    }
+		int slideThreshold = 3;
+		int maxTopIndex = m_content->size() - m_items_per_page;
+		if (maxTopIndex < 0) maxTopIndex = 0;
+
+		if (m_selected >= slideThreshold) {
+			m_top = std::min(m_selected - slideThreshold + 1, maxTopIndex);
+		} else {
+			m_top = 0;
+		}
 	} else {
-	    m_top = m_selected - (m_selected % m_items_per_page);
+		m_top = m_selected - (m_selected % m_items_per_page);
 	}
 
 	/*  new scollmode by line if not on the first page */
