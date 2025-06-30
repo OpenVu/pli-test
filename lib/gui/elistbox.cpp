@@ -322,10 +322,7 @@ void eListbox::moveSelection(long dir)
 	{
 		if (m_layout_mode == LayoutHorizontal)
 		{
-			// --- Logic for Horizontal Layout ---
-			eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
-			
-			// Guard clause: if already at the last item, do nothing.
+			// Always move the cursor by 1, just like anim.html
 			if (oldsel >= m_content->size() - 1)
 			{
 				if (m_animating)
@@ -335,40 +332,8 @@ void eListbox::moveSelection(long dir)
 					m_animation_timer->stop();
 				}
 				invalidate();
-				return; // Return is appropriate here as it's a full stop.
+				return;
 			}
-			
-			int last_item_index = m_content->size() - 1;
-			int last_visible_index = m_top + m_items_per_page - 1;
-			bool stop_sliding = (last_visible_index >= last_item_index - 1);
-
-			if (!stop_sliding && oldsel >= 3)
-			{
-				// --- BEHAVIOR 2: SLIDING LIST ANIMATION ---
-				// This is the animated sliding part. It is a special case and MUST remain
-				// self-contained with its own invalidation and return statement because
-				// it only triggers the start of an animation.
-				eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
-
-				m_top += 1;
-				m_selected = m_top + 3;
-				m_content->cursorSet(m_selected);
-
-				eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
-
-				m_animation_direction = 1;
-				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();
-				m_animating = true;
-				m_animation_timer->start(20, true);
-				invalidate();
-				return; // This return is CORRECT and necessary for the animation.
-			}
-			
-			// --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT (Non-Sliding) ---
-			// This block now handles regular, non-animated movement.
-			// It will NOT return, but will fall through to the common logic at the end.
-			eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
 
 			if (m_animating)
 			{
@@ -382,7 +347,7 @@ void eListbox::moveSelection(long dir)
 				m_content->cursorMove(1);
 				newsel = m_content->cursorGet();
 			} while (newsel != oldsel && !m_content->currentCursorSelectable());
-			m_selected = newsel; // Update m_selected for the common logic below
+			m_selected = newsel;
 		}
 		else
 		{
