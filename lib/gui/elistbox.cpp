@@ -501,6 +501,13 @@ void eListbox::moveSelection(long dir)
 
 	/* now, look wether the current selection is out of screen */
 	m_selected = m_content->cursorGet();
+	// --- FIX: Lock m_top when last item is visible in horizontal layout ---
+	if (m_layout_mode == LayoutHorizontal) {
+		int last_item_index = m_content->size() - 1;
+		int min_top = m_content->size() - m_items_per_page;
+		if (min_top < 0) min_top = 0;
+		if (m_top > min_top) m_top = min_top;
+	}
 	m_top = m_selected - (m_selected % m_items_per_page);
 
 	/*  new scollmode by line if not on the first page */
