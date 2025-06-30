@@ -67,10 +67,10 @@ struct eListboxStyle
 {
 	ePtr<gPixmap> m_background, m_selection, m_shadow, m_overlay;
 	int m_transparent_background;
-	gRGB m_background_color, m_background_color_rows, m_background_color_global, m_background_color_selected,
-	m_foreground_color, m_foreground_color_selected, m_border_color, m_sliderborder_color, m_sliderforeground_color;
+	gRGB m_background_color, m_background_color_gradient_start, m_background_color_gradient_stop, m_background_color_rows, m_background_color_global, m_background_color_selected,
+	m_background_color_gradient_selected_start, m_background_color_gradient_selected_stop, m_foreground_color, m_foreground_color_selected, m_border_color, m_sliderborder_color, m_sliderforeground_color;
 	gRGB m_background_col_current = m_background_color;
-	int m_background_color_set, m_background_color_global_set, m_background_color_rows_set, m_foreground_color_set, m_background_color_selected_set, m_foreground_color_selected_set, m_sliderforeground_color_set, m_sliderborder_color_set, m_scrollbarsliderborder_size_set;
+	int m_background_color_set, m_background_color_gradient_direction, m_background_color_gradient_set, m_background_color_global_set, m_background_color_rows_set, m_foreground_color_set, m_background_color_selected_set, m_background_color_gradient_selected_direction, m_background_color_gradient_selected_set, m_foreground_color_selected_set, m_sliderforeground_color_set, m_sliderborder_color_set, m_scrollbarsliderborder_size_set;
 	int m_shadow_set, m_overlay_set;	
 		/*
 			{m_transparent_background m_background_color_set m_background}
@@ -177,9 +177,11 @@ public:
 	void setOverlay(int ovelay);
 
 	void setBackgroundColor(gRGB &col);
+	void setBackgroundColorGradient(gRGB &start, gRGB &end, int direction);
 	void setBackgroundColorGlobal(gRGB &col);
 	void setBackgroundColorRows(gRGB &col);
 	void setBackgroundColorSelected(gRGB &col);
+	void setBackgroundColorGradientSelected(gRGB &start, gRGB &end, int direction);
 	void setForegroundColor(gRGB &col);
 	void setForegroundColorSelected(gRGB &col);
 	void setBorderColor(const gRGB &col);
