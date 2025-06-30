@@ -506,10 +506,10 @@ void eListbox::moveSelection(long dir)
 		int maxTopIndex = m_content->size() - m_items_per_page;
 		if (maxTopIndex < 0) maxTopIndex = 0;
 
-		if (m_selected < slideThreshold) {
-			m_top = std::min(slideThreshold - m_selected - 1, maxTopIndex);
-		} else {
+		if (m_selected >= slideThreshold) {
 			m_top = std::min(m_selected - slideThreshold + 1, maxTopIndex);
+		} else {
+			m_top = 0;
 		}
 	} else {
 		m_top = m_selected - (m_selected % m_items_per_page);
