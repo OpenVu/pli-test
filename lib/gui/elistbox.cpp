@@ -348,12 +348,13 @@ void eListbox::moveSelection(long dir)
 		            }
 		
 		            // Move the cursor incrementally to the next index
-		            if (m_selected < m_content->size() - 1)
+		            do
 		            {
 		                m_content->cursorMove(1); // Move to the next item
 		                m_selected = m_content->cursorGet();
-		                eDebug("[MyListbox-Debug] Cursor moved incrementally to index: %d", m_selected);
-		            }
+		            } while (!m_content->currentCursorSelectable() && m_selected < m_content->size());
+		
+		            eDebug("[MyListbox-Debug] Cursor moved incrementally to index: %d", m_selected);
 		
 		            // Stop any ongoing animation
 		            if (m_animating)
@@ -438,8 +439,6 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
-
-
 
 
 	case prevPage:
