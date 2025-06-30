@@ -335,7 +335,7 @@ void eListbox::moveSelection(long dir)
 		                m_animation_timer->stop();
 		            }
 		            invalidate();
-		            return; // Return as we're at the last item.
+		            return; // Return is appropriate here as it's a full stop.
 		        }
 		
 		        int last_item_index = m_content->size() - 1;
@@ -366,16 +366,16 @@ void eListbox::moveSelection(long dir)
 		
 		        if (stop_sliding)
 		        {
-		            // --- BEHAVIOR 3: NO MORE SLIDING, CURSOR MOVEMENT ONLY ---
-		            eDebug("[MyListbox-Debug] Sliding stopped, moving cursor within visible range.");
+		            // --- BEHAVIOR 3: NO MORE SLIDING ---
+		            eDebug("[MyListbox-Debug] Sliding stopped. Last visible item reached.");
 		
-		            // Allow cursor to move freely without resetting the list position
+		            // Stop sliding and allow cursor movement within the visible range
 		            if (oldsel < last_item_index)
 		            {
-		                m_selected++;
+		                m_selected++; // Move the cursor only
 		                m_content->cursorSet(m_selected);
 		                invalidate();
-		                return; // Exit after cursor update.
+		                return; // Exit without further processing.
 		            }
 		        }
 		
@@ -394,11 +394,11 @@ void eListbox::moveSelection(long dir)
 		            m_content->cursorMove(1);
 		            newsel = m_content->cursorGet();
 		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		        m_selected = newsel; // Update m_selected for common logic
+		        m_selected = newsel; // Update m_selected for the common logic below
 		    }
 		    else
 		    {
-		        // --- Original logic for Vertical and Grid layouts ---
+		        // --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
 		        do
 		        {
 		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
@@ -425,6 +425,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 		
 	case prevPage:
