@@ -471,7 +471,7 @@ void eListbox::moveSelection(long dir)
 		            {
 		                if (m_enabled_wrap_around)
 		                {
-		                    if (oldCategorysel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
 		                        m_content->cursorMove(-1);
 		                    else
 		                        m_content->cursorHome();
