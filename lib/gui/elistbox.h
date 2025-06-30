@@ -67,10 +67,10 @@ struct eListboxStyle
 {
 	ePtr<gPixmap> m_background, m_selection, m_shadow, m_overlay;
 	int m_transparent_background;
-	gRGB m_background_color, m_background_color_gradient_start, m_background_color_gradient_stop, m_background_color_rows, m_background_color_global, m_background_color_selected,
-	m_background_color_gradient_selected_start, m_background_color_gradient_selected_stop, m_foreground_color, m_foreground_color_selected, m_border_color, m_sliderborder_color, m_sliderforeground_color;
+	gRGB m_background_color, m_background_color_rows, m_background_color_global, m_background_color_selected,
+	m_foreground_color, m_foreground_color_selected, m_border_color, m_sliderborder_color, m_sliderforeground_color;
 	gRGB m_background_col_current = m_background_color;
-	int m_background_color_set, m_background_color_gradient_direction, m_background_color_gradient_set, m_background_color_global_set, m_background_color_rows_set, m_foreground_color_set, m_background_color_selected_set, m_background_color_gradient_selected_direction, m_background_color_gradient_selected_set, m_foreground_color_selected_set, m_sliderforeground_color_set, m_sliderborder_color_set, m_scrollbarsliderborder_size_set;
+	int m_background_color_set, m_background_color_global_set, m_background_color_rows_set, m_foreground_color_set, m_background_color_selected_set, m_foreground_color_selected_set, m_sliderforeground_color_set, m_sliderborder_color_set, m_scrollbarsliderborder_size_set;
 	int m_shadow_set, m_overlay_set;	
 		/*
 			{m_transparent_background m_background_color_set m_background}
@@ -177,11 +177,9 @@ public:
 	void setOverlay(int ovelay);
 
 	void setBackgroundColor(gRGB &col);
-	void setBackgroundColorGradient(gRGB &start, gRGB &end, int direction);
 	void setBackgroundColorGlobal(gRGB &col);
 	void setBackgroundColorRows(gRGB &col);
 	void setBackgroundColorSelected(gRGB &col);
-	void setBackgroundColorGradientSelected(gRGB &start, gRGB &end, int direction);
 	void setForegroundColor(gRGB &col);
 	void setForegroundColorSelected(gRGB &col);
 	void setBorderColor(const gRGB &col);
@@ -225,7 +223,6 @@ public:
 protected:
 	int event(int event, void *data=0, void *data2=0);
 	void recalcSize();
-	void animateStep();  // <--- Add this line
 
 private:
 	int m_scrollbar_mode, m_scroll_mode, m_prev_scrollbar_page;
@@ -257,20 +254,13 @@ private:
 	int m_first_selectable_item;
 	int m_last_selectable_item;
 	bool m_center_list;
+	
 
 	ePoint m_margin;
 	ePtr<iListboxContent> m_content;
 	eSlider *m_scrollbar;
 	eListboxStyle m_style;
 	ePtr<gPixmap> m_scrollbarpixmap, m_scrollbarbackgroundpixmap;
-
-	// Animation members must come AFTER m_scrollbar
-	ePtr<eTimer> m_animation_timer;
-	int m_animation_offset;
-	int m_animation_target_offset;
-	int m_animation_step;
-	bool m_animating;
-	int m_animation_direction;
 #endif
 };
 
