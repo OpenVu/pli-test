@@ -318,7 +318,7 @@ void eListbox::moveSelection(long dir)
 	        break;
 	    }*/
 
-	/*case moveDown:
+	case moveDown:
 	{
 		if (m_layout_mode == LayoutHorizontal)
 		{
@@ -412,113 +412,8 @@ void eListbox::moveSelection(long dir)
 			m_selected = newsel;
 		}
 		break;
-	}*/
+	}
 		
-	case moveDown:
-		{
-		    if (m_layout_mode == LayoutHorizontal)
-		    {
-		        eDebug("[MyListbox-Debug] Horizontal layout - oldsel=%d, m_top=%d", oldsel, m_top);
-		        
-		        // If at last item, do nothing
-		        if (oldsel >= m_content->size() - 1)
-		        {
-		            if (m_animating)
-		            {
-		                m_animating = false;
-		                m_animation_offset = 0;
-		                m_animation_timer->stop();
-		            }
-		            invalidate();
-		            return;
-		        }
-		
-		        int last_item = m_content->size() - 1;
-		        int last_visible = m_top + m_items_per_page - 1;
-		        bool end_reached = (last_visible >= last_item);
-		
-		        // Sliding animation logic (when not at end and selection is past center)
-		        if (!end_reached && oldsel >= m_top + 3)
-		        {
-		            eDebug("[MyListbox-Debug] Starting slide animation");
-		            
-		            m_top += 1;
-		            m_selected = m_top + 3;
-		            m_content->cursorSet(m_selected);
-		
-		            m_animation_direction = 1;
-		            m_animation_offset = 0;
-		            m_animation_target_offset = m_itemwidth + m_margin.x();
-		            m_animating = true;
-		            m_animation_timer->start(20, true);
-		            invalidate();
-		            return;
-		        }
-		        
-		        // Normal movement logic
-		        eDebug("[MyListbox-Debug] Performing normal movement");
-		        
-		        // Clean up any ongoing animation
-		        if (m_animating)
-		        {
-		            m_animating = false;
-		            m_animation_offset = 0;
-		            m_animation_timer->stop();
-		        }
-		
-		        // Move to next selectable item
-		        do
-		        {
-		            m_content->cursorMove(1);
-		            newsel = m_content->cursorGet();
-		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		        
-		        m_selected = newsel;
-		
-		        // Adjust viewport if needed
-		        if (m_selected >= m_top + m_items_per_page)
-		        {
-		            m_top = m_selected - 3;
-		            if (m_top < 0) m_top = 0;
-		        }
-		        
-		        // Special handling when reaching end
-		        if (m_selected >= last_item && !end_reached)
-		        {
-		            m_top = last_item - m_items_per_page + 1;
-		            if (m_top < 0) m_top = 0;
-		        }
-		    }
-		    else
-		    {
-		        // Original vertical/grid layout logic
-		        do
-		        {
-		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-		            if (!m_content->cursorValid())
-		            {
-		                if (m_enabled_wrap_around)
-		                {
-		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-		                        m_content->cursorMove(-1);
-		                    else
-		                        m_content->cursorHome();
-		                }
-		                else
-		                {
-		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-		                        m_content->cursorMove(-1);
-		                    else
-		                        m_content->cursorSet(oldsel);
-		                }
-		            }
-		            newsel = m_content->cursorGet();
-		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		        m_selected = newsel;
-		    }
-		    break;
-		}
-
 	case prevPage:
 	{
 		int pageind;
