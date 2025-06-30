@@ -322,11 +322,14 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // --- Logic for Horizontal Layout ---
+		        // --- Horizontal Layout Debug Info ---
 		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
 		
-		        // Guard clause: if already at the last item, do nothing.
-		        if (oldsel >= m_content->size() - 1)
+		        int last_item_index = m_content->size() - 1;
+		        int last_visible_index = m_top + m_items_per_page - 1;
+		
+		        // If already at the last item, stop.
+		        if (oldsel >= last_item_index)
 		        {
 		            if (m_animating)
 		            {
@@ -335,70 +338,49 @@ void eListbox::moveSelection(long dir)
 		                m_animation_timer->stop();
 		            }
 		            invalidate();
-		            return; // Return is appropriate here as it's a full stop.
+		            return;
 		        }
 		
-		        int last_item_index = m_content->size() - 1;
-		        int last_visible_index = m_top + m_items_per_page - 1;
-		
-		        // Determine if sliding should stop
-		        bool stop_sliding = (last_visible_index >= last_item_index);
-		
-		        if (!stop_sliding && oldsel >= 3)
+		        // If sliding has reached the end, stop further sliding.
+		        if (last_visible_index >= last_item_index)
 		        {
-		            // --- BEHAVIOR 2: SLIDING LIST ANIMATION ---
+		            // Allow only cursor movement when the slide has stopped.
+		            m_selected++;
+		            m_content->cursorSet(m_selected);
+		            invalidate();
+		            return;
+		        }
+		
+		        // Perform sliding if the cursor reaches index 3.
+		        if (oldsel >= 3)
+		        {
 		            eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
 		
-		            m_top += 1; // Increment top to slide left
-		            m_selected = m_top + 3; // Lock cursor at index 3 relative to visible area
+		            m_top++; // Slide the list left.
+		            m_selected = m_top + 3; // Lock cursor at index 3.
 		            m_content->cursorSet(m_selected);
 		
 		            eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
 		
-		            m_animation_direction = 1; // Moving left
+		            // Trigger the animation.
+		            m_animation_direction = 1; // Sliding left.
 		            m_animation_offset = 0;
 		            m_animation_target_offset = m_itemwidth + m_margin.x();
 		            m_animating = true;
 		            m_animation_timer->start(20, true);
 		            invalidate();
-		            return; // Exit after triggering animation.
+		            return;
 		        }
 		
-		        if (stop_sliding)
-		        {
-		            // --- BEHAVIOR 3: NO MORE SLIDING ---
-		            eDebug("[MyListbox-Debug] Sliding stopped. Last visible item reached.");
-		
-		            // Stop sliding and allow cursor movement within the visible range
-		            if (oldsel < last_item_index)
-		            {
-		                m_selected++; // Move the cursor only
-		                m_content->cursorSet(m_selected);
-		                invalidate();
-		                return; // Exit without further processing.
-		            }
-		        }
-		
-		        // --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT (Non-Sliding) ---
-		        eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
-		
-		        if (m_animating)
-		        {
-		            m_animating = false;
-		            m_animation_offset = 0;
-		            m_animation_timer->stop();
-		        }
-		
-		        do
-		        {
-		            m_content->cursorMove(1);
-		            newsel = m_content->cursorGet();
-		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		        m_selected = newsel; // Update m_selected for the common logic below
+		        // Normal cursor movement for initial indices (0 to 2).
+		        eDebug("[MyListbox-Debug] Normal cursor movement.");
+		        m_selected++;
+		        m_content->cursorSet(m_selected);
+		        invalidate();
 		    }
 		    else
 		    {
-		        // --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
+		        // --- Original logic for other layouts (Vertical, Grid) ---
 		        do
 		        {
 		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
@@ -425,6 +407,7 @@ void eListbox::moveSelection(long dir)
 		    }
 		    break;
 		}
+
 
 
 		
