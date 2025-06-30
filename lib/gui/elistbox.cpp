@@ -58,7 +58,7 @@ void eListbox::setScrollbarMode(int mode)
 	}
 }
 
-/*void eListbox::animateStep()
+void eListbox::animateStep()
 {
     if (!m_animating)
         return;
@@ -75,9 +75,9 @@ void eListbox::setScrollbarMode(int mode)
 
     invalidate();  // trigger repaint
     m_animation_timer->start(20, true);  // continue animation
-}*/
+}
 
-void eListbox::animateStep()
+/*void eListbox::animateStep()
 {
     if (!m_animating)
         return;
@@ -106,7 +106,7 @@ void eListbox::animateStep()
 
     invalidate();
     m_animation_timer->start(20, true);
-}
+}*/
 
 void eListbox::setLayoutMode(int mode)
 {
