@@ -88,17 +88,19 @@ void eListbox::animateStep()
     {
         m_animating = false;
         m_animation_offset = 0;
-        // Ensure final positions are correct
+        
+        // Add this to lock positions after animation completes
         if (m_layout_mode == LayoutHorizontal)
         {
-            // Adjust m_top if needed to prevent items from jumping back
-            if (m_selected >= m_content->size() - 1)
+            // Ensure m_top and m_selected are in sync
+            if (m_selected != m_top + 3)
             {
-                m_top = m_content->size() - m_items_per_page;
-                if (m_top < 0) m_top = 0;
+                m_selected = m_top + 3;
+                m_content->cursorSet(m_selected);
             }
         }
-        invalidate();  // Final repaint with correct positions
+        
+        invalidate();
         return;
     }
 
@@ -416,12 +418,10 @@ void eListbox::moveSelection(long dir)
 		{
 		    if (m_layout_mode == LayoutHorizontal)
 		    {
-		        // Get current state
-		        int oldsel = m_selected;
-		        int last_item_index = m_content->size() - 1;
+		        eDebug("[MyListbox-Debug] Horizontal layout - oldsel=%d, m_top=%d", oldsel, m_top);
 		        
-		        // If already at last item, do nothing
-		        if (oldsel >= last_item_index)
+		        // If at last item, do nothing
+		        if (oldsel >= m_content->size() - 1)
 		        {
 		            if (m_animating)
 		            {
@@ -433,56 +433,65 @@ void eListbox::moveSelection(long dir)
 		            return;
 		        }
 		
-		        // Calculate visible range
-		        int last_visible_index = m_top + m_items_per_page - 1;
-		        bool at_end_of_list = (last_visible_index >= last_item_index);
+		        int last_item = m_content->size() - 1;
+		        int last_visible = m_top + m_items_per_page - 1;
+		        bool end_reached = (last_visible >= last_item);
 		
-		        // If we can still slide (not at end) and selection is beyond center position
-		        if (!at_end_of_list && oldsel >= m_top + 3)
+		        // Sliding animation logic (when not at end and selection is past center)
+		        if (!end_reached && oldsel >= m_top + 3)
 		        {
-		            // Start sliding animation
+		            eDebug("[MyListbox-Debug] Starting slide animation");
+		            
 		            m_top += 1;
 		            m_selected = m_top + 3;
 		            m_content->cursorSet(m_selected);
 		
-		            m_animation_direction = 1;  // moving right
+		            m_animation_direction = 1;
 		            m_animation_offset = 0;
 		            m_animation_target_offset = m_itemwidth + m_margin.x();
 		            m_animating = true;
 		            m_animation_timer->start(20, true);
 		            invalidate();
-		            return;  // Exit early to let animation handle the rest
+		            return;
 		        }
-		        else
+		        
+		        // Normal movement logic
+		        eDebug("[MyListbox-Debug] Performing normal movement");
+		        
+		        // Clean up any ongoing animation
+		        if (m_animating)
 		        {
-		            // Either at end of list or in initial range - normal movement
-		            if (m_animating)
-		            {
-		                m_animating = false;
-		                m_animation_offset = 0;
-		                m_animation_timer->stop();
-		            }
+		            m_animating = false;
+		            m_animation_offset = 0;
+		            m_animation_timer->stop();
+		        }
 		
-		            // Move cursor to next selectable item
-		            do
-		            {
-		                m_content->cursorMove(1);
-		                newsel = m_content->cursorGet();
-		            } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		            
-		            m_selected = newsel;
+		        // Move to next selectable item
+		        do
+		        {
+		            m_content->cursorMove(1);
+		            newsel = m_content->cursorGet();
+		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
+		        
+		        m_selected = newsel;
 		
-		            // If we reached the end, adjust top to show last items
-		            if (m_selected >= last_item_index && !at_end_of_list)
-		            {
-		                m_top = last_item_index - m_items_per_page + 1;
-		                if (m_top < 0) m_top = 0;
-		            }
+		        // Adjust viewport if needed
+		        if (m_selected >= m_top + m_items_per_page)
+		        {
+		            m_top = m_selected - 3;
+		            if (m_top < 0) m_top = 0;
+		        }
+		        
+		        // Special handling when reaching end
+		        if (m_selected >= last_item && !end_reached)
+		        {
+		            m_top = last_item - m_items_per_page + 1;
+		            if (m_top < 0) m_top = 0;
 		        }
 		    }
 		    else
 		    {
-		        // Original logic for other layout modes (Vertical/Grid)
+		        // Original vertical/grid layout logic
 		        do
 		        {
 		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
