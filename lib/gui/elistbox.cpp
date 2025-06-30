@@ -10,18 +10,11 @@ eListbox::eListbox(eWidget *parent) :
 	m_content_changed(false), m_enabled_wrap_around(false), m_itemheight_set(false),
 	m_itemwidth_set(false), m_selectionheight_set(false), m_selectionwidth_set(false), m_columns_set(false), m_rows_set(false), m_scrollbar_width(20), m_scrollbar_border_width(1), m_scrollbar_offset(5),
 	m_top(0), m_selected(0), m_layout_mode(LayoutVertical), m_itemheight(20), m_itemwidth(20), m_selectionheight(20), m_selectionwidth(20), m_columns(2), m_rows(2),
-	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_first_selectable_item(-1), m_last_selectable_item(-1), m_center_list(true), m_scrollbar(nullptr),
-	// NEW animation-related initializations
-	m_animation_timer(nullptr), m_animation_offset(0),
-	m_animation_target_offset(0), m_animation_step(20),
-	m_animating(false), m_animation_direction(0)
+	m_items_per_page(0), m_selection_enabled(1), xoffset(0), yoffset(0), m_native_keys_bound(false), m_first_selectable_item(-1), m_last_selectable_item(-1), m_center_list(true), m_scrollbar(nullptr)
 {
 	memset(static_cast<void*>(&m_style), 0, sizeof(m_style));
 	m_style.m_text_offset = ePoint(1,1);
 //	setContent(new eListboxStringContent());
-	//eTimer::create(m_animation_timer);  // no 'this'
-	m_animation_timer = eTimer::create(eApp);
-	CONNECT(m_animation_timer->timeout, eListbox::animateStep);
 
 	allowNativeKeys(true);
 }
@@ -57,56 +50,6 @@ void eListbox::setScrollbarMode(int mode)
 		if (m_style.m_sliderborder_color_set) m_scrollbar->setSliderBorderColor(m_style.m_sliderborder_color);
 	}
 }
-
-void eListbox::animateStep()
-{
-    if (!m_animating)
-        return;
-
-    m_animation_offset += m_animation_step;
-
-    if (m_animation_offset >= m_animation_target_offset)
-    {
-        m_animating = false;
-        m_animation_offset = 0;
-        // m_top and m_selected are updated in moveSelection
-        return;
-    }
-
-    invalidate();  // trigger repaint
-    m_animation_timer->start(20, true);  // continue animation
-}
-
-/*void eListbox::animateStep()
-{
-    if (!m_animating)
-        return;
-
-    m_animation_offset += m_animation_step;
-
-    if (m_animation_offset >= m_animation_target_offset)
-    {
-        m_animating = false;
-        m_animation_offset = 0;
-        
-        // Add this to lock positions after animation completes
-        if (m_layout_mode == LayoutHorizontal)
-        {
-            // Ensure m_top and m_selected are in sync
-            if (m_selected != m_top + 3)
-            {
-                m_selected = m_top + 3;
-                m_content->cursorSet(m_selected);
-            }
-        }
-        
-        invalidate();
-        return;
-    }
-
-    invalidate();
-    m_animation_timer->start(20, true);
-}*/
 
 void eListbox::setLayoutMode(int mode)
 {
@@ -254,169 +197,30 @@ void eListbox::moveSelection(long dir)
 			break;
 		[[fallthrough]];
 	case pageDown:
-		
 	case moveDown:
-	    {
-	        // Move cursor up to index 3, then fix cursor and slide list
-	        if (m_layout_mode == LayoutHorizontal && oldsel < 3)
-	        {
-	            do
-	            {
-	                m_content->cursorMove(1);
-	                newsel = m_content->cursorGet();
-	            } while (newsel != oldsel && !m_content->currentCursorSelectable() && newsel < 3);
-	            m_selected = newsel;
-	            m_top = 0; // Ensure m_top stays at 0 until index 3
-	        }
-	        else if (m_layout_mode == LayoutHorizontal)
-	        {
-	            // Fix cursor at index 3 relative to visible area, slide list left
-	            if (!m_animating)
-	            {
-	                m_top += 1; // Slide list by incrementing m_top
-	                m_selected = m_top + 3; // Fix cursor at index 3 relative to m_top
-	                m_content->cursorSet(m_selected);
-	                m_animation_direction = 1;  // moving right
-	                m_animation_offset = 0;
-	                m_animation_target_offset = m_itemwidth + m_margin.x();
-	                if (m_selected < m_content->size()) // Only animate if within bounds
-	                {
-	                    m_animating = true;
-	                    m_animation_timer->start(20, true);
-	                }
-	                invalidate(); // Trigger repaint for new m_top
-	                return;
-	            }
-	            // If animating, do nothing to avoid interrupting animation
-	        }
-	        else
-	        {
-	            do
-	            {
-	                m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-	                if (!m_content->cursorValid())
-	                {
-	                    if (m_enabled_wrap_around)
-	                    {
-	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-	                            m_content->cursorMove(-1);
-	                        else
-	                            m_content->cursorHome();
-	                    }
-	                    else
-	                    {
-	                        if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-	                            m_content->cursorMove(-1);
-	                        else
-	                            m_content->cursorSet(oldsel);
-	                    }
-	                }
-	                newsel = m_content->cursorGet();
-	            } while (newsel != oldsel && !m_content->currentCursorSelectable());
-	            m_selected = newsel;
-	        }
-	        break;
-	    }
-
-	/*case moveDown:
-	{
-		if (m_layout_mode == LayoutHorizontal)
+		do
 		{
-			// --- Logic for Horizontal Layout ---
-			eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
-			
-			// Guard clause: if already at the last item, do nothing.
-			if (oldsel >= m_content->size() - 1)
-			{
-				if (m_animating)
+			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+			if (!m_content->cursorValid())
+			{ // cursorMove reached end and left cursor position past the list. Must wrap around ?
+				if (m_enabled_wrap_around)
 				{
-					m_animating = false;
-					m_animation_offset = 0;
-					m_animation_timer->stop();
-				}
-				invalidate();
-				return; // Return is appropriate here as it's a full stop.
-			}
-			
-			int last_item_index = m_content->size() - 1;
-			int last_visible_index = m_top + m_items_per_page - 1;
-			bool stop_sliding = (last_visible_index >= last_item_index - 1);
-
-			if (!stop_sliding && oldsel >= 3)
-			{
-				// --- BEHAVIOR 2: SLIDING LIST ANIMATION ---
-				// This is the animated sliding part. It is a special case and MUST remain
-				// self-contained with its own invalidation and return statement because
-				// it only triggers the start of an animation.
-				eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
-
-				m_top += 1;
-				m_selected = m_top + 3;
-				m_content->cursorSet(m_selected);
-
-				eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
-
-				m_animation_direction = 1;
-				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();
-				m_animating = true;
-				m_animation_timer->start(20, true);
-				invalidate();
-				return; // This return is CORRECT and necessary for the animation.
-			}
-			
-			// --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT (Non-Sliding) ---
-			// This block now handles regular, non-animated movement.
-			// It will NOT return, but will fall through to the common logic at the end.
-			eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
-
-			if (m_animating)
-			{
-				m_animating = false;
-				m_animation_offset = 0;
-				m_animation_timer->stop();
-			}
-
-			do
-			{
-				m_content->cursorMove(1);
-				newsel = m_content->cursorGet();
-			} while (newsel != oldsel && !m_content->currentCursorSelectable());
-			m_selected = newsel; // Update m_selected for the common logic below
-		}
-		else
-		{
-			// --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
-			do
-			{
-				m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-				if (!m_content->cursorValid())
-				{
-					if (m_enabled_wrap_around)
-					{
-						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-							m_content->cursorMove(-1);
-						else
-							m_content->cursorHome();
-					}
+					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+						m_content->cursorMove(-1);
 					else
-					{
-						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-							m_content->cursorMove(-1);
-						else
-							m_content->cursorSet(oldsel);
-					}
+						m_content->cursorHome();
 				}
-				newsel = m_content->cursorGet();
-			} while (newsel != oldsel && !m_content->currentCursorSelectable());
-			m_selected = newsel;
-		}
+				else
+				{
+					if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+						m_content->cursorMove(-1);
+					else
+						m_content->cursorSet(oldsel);
+				}
+			}
+			newsel = m_content->cursorGet();
+		} while (newsel != oldsel && !m_content->currentCursorSelectable());
 		break;
-	}*/
-
-
-
-		
 	case prevPage:
 	{
 		int pageind;
@@ -612,7 +416,7 @@ void eListbox::moveSelection(long dir)
 	}
 
 	// if it is, then the old selection clip is irrelevant, clear it or we'll get artifacts
-	if (m_top != oldtop && m_content && !m_animating)
+	if (m_top != oldtop && m_content)
 		m_content->resetClip();
 
 	if (oldsel != m_selected)
@@ -826,43 +630,40 @@ int eListbox::event(int event, void *data, void *data2)
 		ASSERT(m_content);
 
 		getStyle(style);
+
 		if (!m_content)
 			return 0;
 
 		gPainter &painter = *(gPainter *)data2;
+
 		m_content->cursorSave();
 		m_content->cursorMove(m_top - m_selected);
 
-		const gRegion &paint_region = *(gRegion *)data;
 		gRegion entryrect;
+		const gRegion &paint_region = *(gRegion *)data;
 		gRGB last_col;
 		gRGB def_col = m_style.m_background_color;
 		int line = 0;
 
-		if (m_layout_mode != LayoutVertical && !isTransparent())
+		if (m_layout_mode != LayoutVertical)
 		{
-			painter.clip(paint_region);
-			if (m_style.m_background_color_global_set)
-				painter.setBackgroundColor(m_style.m_background_color_global);
-			else if (m_style.m_background_color_set)
-				painter.setBackgroundColor(m_style.m_background_color);
-			painter.clear();
-			painter.clippop();
+			if (!isTransparent())
+			{
+				painter.clip(paint_region);
+				if (m_style.m_background_color_global_set)
+					painter.setBackgroundColor(m_style.m_background_color_global);
+				else
+				{
+					if (m_style.m_background_color_set)
+						painter.setBackgroundColor(m_style.m_background_color);
+				}
+				painter.clear();
+				painter.clippop();
+			}
 		}
 
-		// Include 2 extra items if animating horizontally
-
-		int extra_items = (m_layout_mode == LayoutHorizontal) ? 2 : 0;
-		//int extra_items = (m_layout_mode == LayoutHorizontal && m_animating) ? 4 : 2;
-		int total_items_to_draw = m_items_per_page + extra_items;
-
-		for (int posx = 0, posy = 0, i = 0;
-			(m_layout_mode == LayoutVertical) ? i <= m_items_per_page : i < total_items_to_draw;
-			posx += m_itemwidth + m_margin.x(), ++i)
+		for (int posx = 0, posy = 0, i = 0; (m_layout_mode == LayoutVertical) ? i <= m_items_per_page : i < m_items_per_page; posx += m_itemwidth + m_margin.x(), ++i)
 		{
-			if (!m_content->cursorValid())
-				break;
-
 			if (m_style.m_background_color_set && m_style.m_background_color_rows_set)
 			{
 				if (m_style.m_background_col_current == def_col || i == 0)
@@ -870,9 +671,7 @@ int eListbox::event(int event, void *data, void *data2)
 					m_style.m_background_color = def_col;
 					m_style.m_background_col_current = m_style.m_background_color_rows;
 				}
-				else if (m_style.m_background_col_current == m_style.m_background_color_rows &&
-						 last_col != m_style.m_background_color_rows &&
-						 m_content->cursorValid() && i > 0)
+				else if (m_style.m_background_col_current == m_style.m_background_color_rows && last_col != m_style.m_background_color_rows && m_content->cursorValid() && i > 0)
 				{
 					m_style.m_background_color = m_style.m_background_color_rows;
 					m_style.m_background_col_current = def_col;
@@ -885,10 +684,13 @@ int eListbox::event(int event, void *data, void *data2)
 				last_col = m_style.m_background_color;
 			}
 
-			if (m_layout_mode == LayoutGrid && i > 0 && i % m_columns == 0)
+			if (m_layout_mode == LayoutGrid && i > 0)
 			{
-				posy += m_itemheight + m_margin.y();
-				posx = 0;
+				if (i % m_columns == 0)
+				{
+					posy += m_itemheight + m_margin.y();
+					posx = 0;
+				}
 			}
 			if (m_layout_mode == LayoutVertical)
 			{
@@ -901,15 +703,7 @@ int eListbox::event(int event, void *data, void *data2)
 			if (sel)
 				line = i;
 
-			// Apply horizontal animation offset
-			int x_anim_shift = 0;
-			if (m_layout_mode == LayoutHorizontal && m_animating)
-				x_anim_shift = -m_animation_direction * m_animation_offset;
-
-			int draw_x = posx + xoffset + x_anim_shift;
-			int draw_y = posy + yoffset;
-
-			entryrect = eRect(draw_x, draw_y, m_selectionwidth, m_selectionheight);
+			entryrect = eRect(posx + xoffset, posy + yoffset, m_selectionwidth, m_selectionheight);
 			gRegion entry_clip_rect = paint_region & entryrect;
 
 			if (!entry_clip_rect.empty())
@@ -917,66 +711,56 @@ int eListbox::event(int event, void *data, void *data2)
 				if (m_layout_mode != LayoutVertical && m_content->cursorValid())
 				{
 					if (i != (m_selected - m_top) || !m_selection_enabled)
-						m_content->paint(painter, *style, ePoint(draw_x, draw_y), 0);
+						m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), 0);
 				}
 				else if (m_layout_mode == LayoutVertical)
-					m_content->paint(painter, *style, ePoint(draw_x, draw_y), sel);
+					m_content->paint(painter, *style, ePoint(posx + xoffset, posy + yoffset), sel);
 			}
 
 			m_content->cursorMove(+1);
+			entryrect.moveBy(ePoint(posx + xoffset, posy + yoffset));
 		}
-
 		m_content->cursorSaveLine(line);
 		m_content->cursorRestore();
-
-		// Draw selected item again (on top)
 		if (m_selected == m_content->cursorGet() && m_content->size() && m_selection_enabled && m_layout_mode != LayoutVertical)
 		{
 			ePoint margin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-			int posx_sel = (m_layout_mode == LayoutGrid)
-				? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns)
-				: (m_itemwidth + margin.x()) * (m_selected - m_top);
-			int posy_sel = (m_layout_mode == LayoutGrid)
-				? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns)
-				: 0;
-
-			if (m_layout_mode == LayoutVertical)
+			int posx_sel = (m_layout_mode == LayoutGrid) ? (m_itemwidth + margin.x()) * ((m_selected - m_top) % m_columns) : (m_itemwidth + margin.x()) * (m_selected - m_top);
+			int posy_sel = (m_layout_mode == LayoutGrid) ? (m_itemheight + margin.y()) * ((m_selected - m_top) / m_columns) : 0;
+			if (m_content)
 			{
-				posx_sel = 0;
-				posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
+				if (m_layout_mode == LayoutVertical)
+				{
+					posx_sel = 0;
+					posy_sel = (m_itemheight + margin.y()) * (m_selected - m_top);
+				}
+
+				if (m_style.m_shadow_set && m_style.m_shadow)
+				{
+					int shadow_x = posx_sel - (((m_selectionwidth + 40) - m_selectionwidth) / 2);
+					int shadow_y = posy_sel - (((m_selectionheight + 40) - m_selectionheight) / 2);
+					eRect rect(shadow_x + xoffset, shadow_y + yoffset, m_selectionwidth + 40, m_selectionheight + 40);
+
+					painter.clip(rect);
+					painter.blitScale(m_style.m_shadow, rect, rect, gPainter::BT_ALPHABLEND);
+					painter.clippop();
+				}
+
+				m_content->paint(painter, *style, ePoint(posx_sel + xoffset, posy_sel + yoffset), 1);
 			}
-
-			int sel_x = posx_sel + xoffset;
-			int sel_y = posy_sel + yoffset;
-
-			if (m_layout_mode == LayoutHorizontal && m_animating)
-				sel_x += -m_animation_direction * m_animation_offset;
-
-			if (m_style.m_shadow_set && m_style.m_shadow)
-			{
-				int shadow_x = sel_x - (((m_selectionwidth + 40) - m_selectionwidth) / 2);
-				int shadow_y = sel_y - (((m_selectionheight + 40) - m_selectionheight) / 2);
-				eRect rect(shadow_x, shadow_y, m_selectionwidth + 40, m_selectionheight + 40);
-
-				painter.clip(rect);
-				painter.blitScale(m_style.m_shadow, rect, rect, gPainter::BT_ALPHABLEND);
-				painter.clippop();
-			}
-
-			m_content->paint(painter, *style, ePoint(sel_x, sel_y), 1);
 		}
 
-		// Clear empty space near vertical scrollbar
+		// clear/repaint empty/unused space between scrollbar and listboxentrys
 		if (m_scrollbar && m_scrollbar->isVisible() && !isTransparent() && m_layout_mode == LayoutVertical)
 		{
 			style->setStyle(painter, eWindowStyle::styleListboxNormal);
-			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset, 0),
-							   eSize(m_scrollbar_offset, m_scrollbar->size().height())));
+			painter.clip(eRect(m_scrollbar->position() - ePoint(m_scrollbar_offset, 0), eSize(m_scrollbar_offset, m_scrollbar->size().height())));
 			if (m_style.m_background_color_set)
 				painter.setBackgroundColor(m_style.m_background_color);
 			painter.clear();
 			painter.clippop();
 		}
+
 		return 0;
 	}
 
@@ -991,7 +775,6 @@ int eListbox::event(int event, void *data, void *data2)
 			return 1;
 		}
 		return 0;
-
 	default:
 		return eWidget::event(event, data, data2);
 	}
