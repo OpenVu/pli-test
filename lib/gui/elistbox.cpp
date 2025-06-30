@@ -288,157 +288,156 @@ void eListbox::moveSelection(long dir)
 	    }*/
 
 	case moveDown:
+	{
+		if (m_layout_mode == LayoutHorizontal)
 		{
-		    if (m_layout_mode == LayoutHorizontal)
-		    {
-		        // --- Self-contained logic for Horizontal Layout ---
-		        eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
-		
-		        // Early check: if we're already at the last item, don't do anything
-		        if (oldsel >= m_content->size() - 1)
-		        {
-		            eDebug("[MyListbox-Debug] Already at last item (index %d), no movement", oldsel);
-		
-		            // Stop any ongoing animation to prevent visual glitches
-		            if (m_animating)
-		            {
-		                eDebug("[MyListbox-Debug] Stopping ongoing animation at last item");
-		                m_animating = false;
-		                m_animation_offset = 0;
-		                m_animation_timer->stop();
-		            }
-		
-		            // Force a redraw to ensure visual state is correct
-		            invalidate();
-		
-		            return; // Already at the last item, don't move
-		        }
-		
-		        // Modified condition: Stop sliding when the last item index becomes visible
-		        int last_item_index = m_content->size() - 1;
-		        int last_visible_index = m_top + m_items_per_page - 1;
-		
-		        // Stop sliding BEFORE the last item becomes visible
-		        bool stop_sliding = (last_visible_index >= last_item_index - 1);
-		        int old_top = m_top; // Store the list's position before any changes
-		
-		        eDebug("[MyListbox-Debug] stop_sliding=%d, m_top=%d, content->size()=%d, items_per_page=%d, last_visible_index=%d, last_item_index=%d", 
-		               stop_sliding, m_top, m_content->size(), m_items_per_page, last_visible_index, last_item_index);
-		
-		        if (oldsel < 3 || stop_sliding)
-		        {
-		            // --- Updated Logic for Handling Stop Sliding ---
-		            eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
-		
-		            // Clear the previous selection area
-		            ePoint oldmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-		            int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
-		            int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
-		            int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
-		
-		            if (m_layout_mode == LayoutHorizontal)
-		            {
-		                gRegion clear_region = eRect(
-		                    (((m_itemwidth + oldmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset,
-		                    shadow_offset_y,
-		                    m_selectionwidth + shadow_size,
-		                    m_selectionheight + shadow_size
-		                );
-		                invalidate(clear_region); // Clear previous selection
-		            }
-		
-		            // Move the cursor incrementally to the next index
-		            do
-		            {
-		                m_content->cursorMove(1); // Move to the next item
-		                m_selected = m_content->cursorGet();
-		            } while (!m_content->currentCursorSelectable() && m_selected < m_content->size());
-		
-		            eDebug("[MyListbox-Debug] Cursor moved incrementally to index: %d", m_selected);
-		
-		            // Stop any ongoing animation
-		            if (m_animating)
-		            {
-		                m_animating = false;
-		                m_animation_offset = 0;
-		                m_animation_timer->stop();
-		            }
-		
-		            // Trigger updates and redraws for the new position
-		            selectionChanged();
-		            updateScrollBar();
-		
-		            if (old_top != m_top)
-		            {
-		                invalidate(); // Redraw everything if m_top changed
-		            }
-		            else
-		            {
-		                // Efficient redraw of old and new selected items
-		                ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
-		                gRegion new_region = eRect(
-		                    (((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset,
-		                    shadow_offset_y,
-		                    m_selectionwidth + shadow_size,
-		                    m_selectionheight + shadow_size
-		                );
-		                invalidate(new_region);
-		            }
-		
-		            return; // Exit early
-		        }
-		        else
-		        {
-		            // --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
-		            eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
-		
-		            // Update list position and selection
-		            m_top += 1;
-		            m_selected = m_top + 3;
-		            m_content->cursorSet(m_selected);
-		
-		            eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
-		
-		            // Trigger the sliding animation
-		            m_animation_direction = 1;
-		            m_animation_offset = 0;
-		            m_animation_target_offset = m_itemwidth + m_margin.x();
-		            m_animating = true;
-		            m_animation_timer->start(20, true);
-		            invalidate(); // Redraw everything for the slide
-		        }
-		
-		        return; // Ensure exit for horizontal layout handling
-		    }
-		    else
-		    {
-		        // --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
-		        do
-		        {
-		            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-		            if (!m_content->cursorValid())
-		            {
-		                if (m_enabled_wrap_around)
-		                {
-		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-		                        m_content->cursorMove(-1);
-		                    else
-		                        m_content->cursorHome();
-		                }
-		                else
-		                {
-		                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-		                        m_content->cursorMove(-1);
-		                    else
-		                        m_content->cursorSet(oldsel);
-		                }
-		            }
-		            newsel = m_content->cursorGet();
-		        } while (newsel != oldsel && !m_content->currentCursorSelectable());
-		        m_selected = newsel;
-		    }
-		    break;
+			// --- Self-contained logic for Horizontal Layout ---
+			eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
+
+			// Early check: if we're already at the last item, don't do anything
+			if (oldsel >= m_content->size() - 1)
+			{
+				eDebug("[MyListbox-Debug] Already at last item (index %d), no movement", oldsel);
+
+				// Stop any ongoing animation to prevent visual glitches
+				if (m_animating)
+				{
+					eDebug("[MyListbox-Debug] Stopping ongoing animation at last item");
+					m_animating = false;
+					m_animation_offset = 0;
+					m_animation_timer->stop();
+				}
+
+				// Force a redraw to ensure visual state is correct
+				invalidate();
+
+				return; // Already at the last item, don't move
+			}
+
+			// Modified condition: Stop sliding when the last item index becomes visible
+			int last_item_index = m_content->size() - 1;
+			int last_visible_index = m_top + m_items_per_page - 1;
+
+			// Stop sliding BEFORE the last item becomes visible
+			bool stop_sliding = (last_visible_index >= last_item_index - 1);
+			int old_top = m_top; // Store the list's position before any changes
+
+			eDebug("[MyListbox-Debug] stop_sliding=%d, m_top=%d, content->size()=%d, items_per_page=%d, last_visible_index=%d, last_item_index=%d", 
+				   stop_sliding, m_top, m_content->size(), m_items_per_page, last_visible_index, last_item_index);
+
+			if (oldsel < 3 || stop_sliding)
+			{
+				// --- CORRECTED LOGIC: Logic for Handling Cursor Movement When Sliding Stops ---
+				eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
+
+				// Move the cursor to the next selectable item. Check against oldsel to prevent infinite loop on unselectable items.
+				do
+				{
+					m_content->cursorMove(1);
+					m_selected = m_content->cursorGet();
+				} while (m_selected != oldsel && !m_content->currentCursorSelectable());
+
+				eDebug("[MyListbox-Debug] Cursor moved incrementally to index: %d", m_selected);
+
+				// Stop any ongoing animation
+				if (m_animating)
+				{
+					m_animating = false;
+					m_animation_offset = 0;
+					m_animation_timer->stop();
+				}
+
+				// --- Correct Invalidation Logic ---
+				selectionChanged();
+				updateScrollBar();
+
+				if (old_top != m_top)
+				{
+					invalidate(); // Redraw everything if m_top changed (unlikely in this path)
+				}
+				else if (oldsel != m_selected) // Only redraw if the selection actually changed
+				{
+					// Redraw both the old and newly selected items in a single operation
+					ePoint newmargin = (m_selected > 0) ? m_margin : ePoint(0, 0);
+					ePoint oldmargin = (oldsel > 0) ? m_margin : ePoint(0, 0);
+					int shadow_offset_x = (m_style.m_shadow_set && m_style.m_shadow) ? (((m_selectionwidth + 40) - m_selectionwidth) / 2) : 0;
+					int shadow_offset_y = (m_style.m_shadow_set && m_style.m_shadow) ? -(((m_selectionheight + 40) - m_selectionheight) / 2) + yoffset : yoffset;
+					int shadow_size = (m_style.m_shadow_set && m_style.m_shadow) ? 40 : 0;
+
+					// Create a region that includes the new selection's area
+					gRegion inv_region = eRect(
+						(((m_itemwidth + newmargin.x()) * (m_selected - m_top)) - shadow_offset_x) + xoffset,
+						shadow_offset_y,
+						m_selectionwidth + shadow_size,
+						m_selectionheight + shadow_size
+					);
+					
+					// Add the old selection's area to the region
+					inv_region |= eRect(
+						(((m_itemwidth + oldmargin.x()) * (oldsel - m_top)) - shadow_offset_x) + xoffset,
+						shadow_offset_y,
+						m_selectionwidth + shadow_size,
+						m_selectionheight + shadow_size
+					);
+					
+					// Invalidate the combined region
+					invalidate(inv_region);
+				}
+				
+				return; // Exit after handling
+			}
+			else
+			{
+				// --- BEHAVIOR 2: SLIDING LIST MOVEMENT ---
+				eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
+
+				// Update list position and selection
+				m_top += 1;
+				m_selected = m_top + 3;
+				m_content->cursorSet(m_selected);
+
+				eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
+
+				// Trigger the sliding animation
+				m_animation_direction = 1;
+				m_animation_offset = 0;
+				m_animation_target_offset = m_itemwidth + m_margin.x();
+				m_animating = true;
+				m_animation_timer->start(20, true);
+				invalidate(); // Redraw everything for the slide
+			}
+
+			return; // Ensure exit for horizontal layout handling
 		}
+		else
+		{
+			// --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
+			do
+			{
+				m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+				if (!m_content->cursorValid())
+				{
+					if (m_enabled_wrap_around)
+					{
+						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+							m_content->cursorMove(-1);
+						else
+							m_content->cursorHome();
+					}
+					else
+					{
+						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+							m_content->cursorMove(-1);
+						else
+							m_content->cursorSet(oldsel);
+					}
+				}
+				newsel = m_content->cursorGet();
+			} while (newsel != oldsel && !m_content->currentCursorSelectable());
+			m_selected = newsel;
+		}
+		break;
+	}
 
 
 	case prevPage:
