@@ -304,7 +304,26 @@ void eListbox::moveSelection(long dir)
 	    else
 	    {
 	        // Original logic for other layout modes
-	        // ... (keep existing code)
+	        do
+	        {
+	            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveUp) ? -m_columns : -1);
+	            newsel = m_content->cursorGet();
+	            if (newsel == prevsel)
+	            {
+	                if (m_enabled_wrap_around)
+	                {
+	                    m_content->cursorEnd();
+	                    m_content->cursorMove(-1);
+	                    newsel = m_content->cursorGet();
+	                }
+	                else
+	                {
+	                    m_content->cursorSet(oldsel);
+	                    break;
+	                }
+	            }
+	            prevsel = newsel;
+	        } while (newsel != oldsel && !m_content->currentCursorSelectable());
 	    }
 	    break;
 	}
@@ -485,8 +504,30 @@ void eListbox::moveSelection(long dir)
 	    }
 	    else
 	    {
-	        // Original logic for other layout modes
-	        // ... (keep existing code)
+	       // Original logic for other layout modes
+	        do
+	        {
+	            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+	            if (!m_content->cursorValid())
+	            {
+	                if (m_enabled_wrap_around)
+	                {
+	                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                        m_content->cursorMove(-1);
+	                    else
+	                        m_content->cursorHome();
+	                }
+	                else
+	                {
+	                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                        m_content->cursorMove(-1);
+	                    else
+	                        m_content->cursorSet(oldsel);
+	                }
+	            }
+	            newsel = m_content->cursorGet();
+	        } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	        m_selected = newsel;
 	    }
 	    break;
 	}
