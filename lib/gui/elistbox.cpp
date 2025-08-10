@@ -222,27 +222,97 @@ void eListbox::moveSelection(long dir)
 		[[fallthrough]];
 	case pageUp:
 	case moveUp:
-		do
-		{
-			m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveUp) ? -m_columns : -1);
-			newsel = m_content->cursorGet();
-			if (newsel == prevsel)
-			{ // cursorMove reached top and left cursor position the same. Must wrap around ?
-				if (m_enabled_wrap_around)
-				{
-					m_content->cursorEnd();
-					m_content->cursorMove(-1);
-					newsel = m_content->cursorGet();
-				}
-				else
-				{
-					m_content->cursorSet(oldsel);
-					break;
-				}
-			}
-			prevsel = newsel;
-		} while (newsel != oldsel && !m_content->currentCursorSelectable());
-		break;
+	{
+	    if (m_layout_mode == LayoutHorizontal)
+	    {
+	        eDebug("[MyListbox-Debug] moveUp: oldsel=%d, m_top=%d", oldsel, m_top);
+	        
+	        // Stop any ongoing animation
+	        if (m_animating)
+	        {
+	            m_animating = false;
+	            m_animation_offset = 0;
+	            m_animation_timer->stop();
+	        }
+	        
+	        // If we're at the beginning
+	        if (oldsel == 0)
+	        {
+	            eDebug("[MyListbox-Debug] Already at first item");
+	            if (m_enabled_wrap_around)
+	            {
+	                m_content->cursorEnd();
+	                m_content->cursorMove(-1);
+	                m_selected = m_content->cursorGet();
+	                m_top = m_selected - 3; // Position so cursor appears at position 3
+	                if (m_top < 0) m_top = 0;
+	            }
+	            break;
+	        }
+	        
+	        // If m_top > 0, we need to slide back
+	        if (m_top > 0)
+	        {
+	            eDebug("[MyListbox-Debug] Sliding back: m_top=%d", m_top);
+	            
+	            m_top -= 1;
+	            m_content->cursorMove(-1);
+	            m_selected = m_content->cursorGet();
+	            
+	            // Start reverse animation
+	            m_animation_direction = -1;  // moving left/backward
+	            m_animation_offset = 0;
+	            m_animation_target_offset = m_itemwidth + m_margin.x();
+	            m_animating = true;
+	            m_animation_timer->start(20, true);
+	            
+	            invalidate();
+	            return;
+	        }
+	        else
+	        {
+	            // Normal cursor movement when at the beginning
+	            eDebug("[MyListbox-Debug] Normal move up from index %d", oldsel);
+	            
+	            m_content->cursorMove(-1);
+	            newsel = m_content->cursorGet();
+	            
+	            while (newsel != oldsel && !m_content->currentCursorSelectable())
+	            {
+	                m_content->cursorMove(-1);
+	                newsel = m_content->cursorGet();
+	            }
+	            
+	            m_selected = newsel;
+	        }
+	    }
+	    else
+	    {
+	        // Original logic for other layout modes
+	        do
+	        {
+	            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveUp) ? -m_columns : -1);
+	            newsel = m_content->cursorGet();
+	            if (newsel == prevsel)
+	            {
+	                if (m_enabled_wrap_around)
+	                {
+	                    m_content->cursorEnd();
+	                    m_content->cursorMove(-1);
+	                    newsel = m_content->cursorGet();
+	                }
+	                else
+	                {
+	                    m_content->cursorSet(oldsel);
+	                    break;
+	                }
+	            }
+	            prevsel = newsel;
+	        } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	    }
+	    break;
+	}
+
 	case refresh:
 		oldsel = ~m_selected;
 		break;
@@ -320,99 +390,118 @@ void eListbox::moveSelection(long dir)
 
 	case moveDown:
 	{
-		if (m_layout_mode == LayoutHorizontal)
-		{
-			// --- Logic for Horizontal Layout ---
-			eDebug("[MyListbox-Debug] oldsel=%d, m_top=%d, items_per_page=%d, size=%d", oldsel, m_top, m_items_per_page, m_content->size());
-			
-			// Guard clause: if already at the last item, do nothing.
-			if (oldsel >= m_content->size() - 1)
-			{
-				if (m_animating)
-				{
-					m_animating = false;
-					m_animation_offset = 0;
-					m_animation_timer->stop();
-				}
-				invalidate();
-				return; // Return is appropriate here as it's a full stop.
-			}
-			
-			int last_item_index = m_content->size() - 1;
-			int last_visible_index = m_top + m_items_per_page - 1;
-			bool stop_sliding = (last_visible_index >= last_item_index - 1);
-
-			if (!stop_sliding && oldsel >= 3)
-			{
-				// --- BEHAVIOR 2: SLIDING LIST ANIMATION ---
-				// This is the animated sliding part. It is a special case and MUST remain
-				// self-contained with its own invalidation and return statement because
-				// it only triggers the start of an animation.
-				eDebug("[MyListbox-Debug] Sliding: oldsel=%d, old_top=%d", oldsel, m_top);
-
-				m_top += 1;
-				m_selected = m_top + 3;
-				m_content->cursorSet(m_selected);
-
-				eDebug("[MyListbox-Debug] Sliding: new m_top=%d, new m_selected=%d", m_top, m_selected);
-
-				m_animation_direction = 1;
-				m_animation_offset = 0;
-				m_animation_target_offset = m_itemwidth + m_margin.x();
-				m_animating = true;
-				m_animation_timer->start(20, true);
-				invalidate();
-				return; // This return is CORRECT and necessary for the animation.
-			}
-			
-			// --- BEHAVIOR 1: NORMAL CURSOR MOVEMENT (Non-Sliding) ---
-			// This block now handles regular, non-animated movement.
-			// It will NOT return, but will fall through to the common logic at the end.
-			eDebug("[MyListbox-Debug] Sliding stopped or within initial range, moving cursor incrementally.");
-
-			if (m_animating)
-			{
-				m_animating = false;
-				m_animation_offset = 0;
-				m_animation_timer->stop();
-			}
-
-			do
-			{
-				m_content->cursorMove(1);
-				newsel = m_content->cursorGet();
-			} while (newsel != oldsel && !m_content->currentCursorSelectable());
-			m_selected = newsel; // Update m_selected for the common logic below
-		}
-		else
-		{
-			// --- This is the original, unchanged logic for other layout modes (Vertical, Grid) ---
-			do
-			{
-				m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
-				if (!m_content->cursorValid())
-				{
-					if (m_enabled_wrap_around)
-					{
-						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-							m_content->cursorMove(-1);
-						else
-							m_content->cursorHome();
-					}
-					else
-					{
-						if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
-							m_content->cursorMove(-1);
-						else
-							m_content->cursorSet(oldsel);
-					}
-				}
-				newsel = m_content->cursorGet();
-			} while (newsel != oldsel && !m_content->currentCursorSelectable());
-			m_selected = newsel;
-		}
-		break;
+	    if (m_layout_mode == LayoutHorizontal)
+	    {
+	        eDebug("[MyListbox-Debug] moveDown: oldsel=%d, m_top=%d", oldsel, m_top);
+	        
+	        // Stop any ongoing animation
+	        if (m_animating)
+	        {
+	            m_animating = false;
+	            m_animation_offset = 0;
+	            m_animation_timer->stop();
+	        }
+	        
+	        // Check if we're at the last item
+	        if (oldsel >= m_content->size() - 1)
+	        {
+	            eDebug("[MyListbox-Debug] Already at last item");
+	            return;
+	        }
+	        
+	        // PHASE 1: Normal cursor movement from index 0 to 3
+	        if (oldsel < 3)
+	        {
+	            eDebug("[MyListbox-Debug] Phase 1: Moving cursor from %d to %d", oldsel, oldsel + 1);
+	            
+	            // Simply move the cursor forward
+	            m_content->cursorMove(1);
+	            newsel = m_content->cursorGet();
+	            
+	            // Ensure the item is selectable
+	            while (newsel != oldsel && !m_content->currentCursorSelectable())
+	            {
+	                m_content->cursorMove(1);
+	                newsel = m_content->cursorGet();
+	                if (newsel >= 4) break; // Don't go past index 3
+	            }
+	            
+	            m_selected = newsel;
+	            m_top = 0; // Keep the view at the beginning
+	            
+	            eDebug("[MyListbox-Debug] Cursor moved to index %d", m_selected);
+	        }
+	        // PHASE 2: Cursor fixed at index 3, list slides
+	        else if (oldsel >= 3)
+	        {
+	            // Check if we can still slide (not at the end of the list)
+	            int last_visible_index = m_top + m_items_per_page - 1;
+	            if (last_visible_index >= m_content->size() - 1)
+	            {
+	                eDebug("[MyListbox-Debug] Cannot slide further - at end of list");
+	                
+	                // Just move cursor normally if there's room
+	                if (oldsel < m_content->size() - 1)
+	                {
+	                    m_content->cursorMove(1);
+	                    newsel = m_content->cursorGet();
+	                    m_selected = newsel;
+	                }
+	                break;
+	            }
+	            
+	            eDebug("[MyListbox-Debug] Phase 2: Sliding list, keeping cursor at relative position 3");
+	            
+	            // Slide the view by incrementing m_top
+	            m_top += 1;
+	            
+	            // Move the actual cursor forward in the content
+	            m_content->cursorMove(1);
+	            m_selected = m_content->cursorGet();
+	            
+	            eDebug("[MyListbox-Debug] New m_top=%d, m_selected=%d", m_top, m_selected);
+	            
+	            // Start the sliding animation
+	            m_animation_direction = 1;  // moving right/forward
+	            m_animation_offset = 0;
+	            m_animation_target_offset = m_itemwidth + m_margin.x();
+	            m_animating = true;
+	            m_animation_timer->start(20, true);
+	            
+	            invalidate();
+	            return; // Important: return here to let animation handle the rendering
+	        }
+	    }
+	    else
+	    {
+	        // Original logic for other layout modes
+	        do
+	        {
+	            m_content->cursorMove((m_layout_mode == LayoutGrid && dir == moveDown) ? m_columns : 1);
+	            if (!m_content->cursorValid())
+	            {
+	                if (m_enabled_wrap_around)
+	                {
+	                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                        m_content->cursorMove(-1);
+	                    else
+	                        m_content->cursorHome();
+	                }
+	                else
+	                {
+	                    if (oldsel + 1 < m_content->size() && m_layout_mode == LayoutGrid && dir == moveDown)
+	                        m_content->cursorMove(-1);
+	                    else
+	                        m_content->cursorSet(oldsel);
+	                }
+	            }
+	            newsel = m_content->cursorGet();
+	        } while (newsel != oldsel && !m_content->currentCursorSelectable());
+	        m_selected = newsel;
+	    }
+	    break;
 	}
+
 
 
 
