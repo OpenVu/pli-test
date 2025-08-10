@@ -225,6 +225,7 @@ public:
 protected:
 	int event(int event, void *data=0, void *data2=0);
 	void recalcSize();
+	void animateStep();  // <--- Add this line
 
 private:
 	int m_scrollbar_mode, m_scroll_mode, m_prev_scrollbar_page;
@@ -256,13 +257,20 @@ private:
 	int m_first_selectable_item;
 	int m_last_selectable_item;
 	bool m_center_list;
-	
 
 	ePoint m_margin;
 	ePtr<iListboxContent> m_content;
 	eSlider *m_scrollbar;
 	eListboxStyle m_style;
 	ePtr<gPixmap> m_scrollbarpixmap, m_scrollbarbackgroundpixmap;
+
+	// Animation members must come AFTER m_scrollbar
+	ePtr<eTimer> m_animation_timer;
+	int m_animation_offset;
+	int m_animation_target_offset;
+	int m_animation_step;
+	bool m_animating;
+	int m_animation_direction;
 #endif
 };
 
