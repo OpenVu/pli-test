@@ -12,6 +12,7 @@ gui_libenigma_gui_a_SOURCES = \
 	gui/elistbox.cpp \
 	gui/elistboxcontent.cpp \
 	gui/epixmap.cpp \
+	gui/eMyPILWidget.cpp \
 	gui/epositiongauge.cpp \
 	gui/eslider.cpp \
 	gui/esubtitle.cpp \
@@ -35,6 +36,7 @@ guiinclude_HEADERS = \
 	gui/elabel.h \
 	gui/elistbox.h \
 	gui/elistboxcontent.h \
+	gui/eMyPILWidget.h \
 	gui/epixmap.h \
 	gui/epositiongauge.h \
 	gui/eslider.h \
