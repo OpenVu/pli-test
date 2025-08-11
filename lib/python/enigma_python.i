@@ -73,6 +73,7 @@ is usually caused by not marking PSignals as immutable.
 #include <lib/gui/egauge.h>
 #include <lib/gui/evideo.h>
 #include <lib/gui/ecanvas.h>
+#include <lib/gui/eMyPILWidget.h>
 #include <lib/python/connections.h>
 #include <lib/python/pythonconfig.h>
 #include <lib/gui/elistbox.h>
@@ -216,6 +217,7 @@ typedef long time_t;
 %include <lib/gui/einputnumber.h>
 %include <lib/gui/epixmap.h>
 %include <lib/gui/ecanvas.h>
+%include <lib/gui/eMyPILWidget.h>
 %include <lib/gui/ebutton.h>
 %include <lib/gui/ewindow.h>
 %include <lib/gui/eslider.h>
