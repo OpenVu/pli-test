@@ -5,8 +5,8 @@ gdi_libenigma_gdi_a_CXXFLAGS = $(LIBSDL_CFLAGS)
 gdi_libenigma_gdi_a_SOURCES = \
 	gdi/accel.cpp \
 	gdi/bcm.cpp \
-	gdi/color.cpp \
 	gdi/compositing.cpp \
+	gdi/drawing.cpp \
 	gdi/epng.cpp \
 	gdi/erect.cpp \
 	gdi/fb.cpp \
@@ -27,8 +27,8 @@ gdi_libenigma_gdi_a_SOURCES = \
 gdiincludedir = $(pkgincludedir)/lib/gdi
 gdiinclude_HEADERS = \
 	gdi/accel.h \
-	gdi/color.h \
 	gdi/compositing.h \
+	gdi/drawing.h \
 	gdi/epng.h \
 	gdi/epoint.h \
 	gdi/erect.h \
@@ -51,7 +51,14 @@ gdi_libenigma_gdi_a_SOURCES += \
 	gdi/sdl.cpp \
 	gdi/sdl.h
 else
+if HAVE_GLES
+# gGLDC: الرسم عبر OpenGL ES بدل الرسم بالمعالج في /dev/fb0
+gdi_libenigma_gdi_a_SOURCES += \
+	gdi/gldc.cpp \
+	gdi/gldc.h
+else
 gdi_libenigma_gdi_a_SOURCES += \
 	gdi/gfbdc.cpp \
 	gdi/gfbdc.h
+endif
 endif
