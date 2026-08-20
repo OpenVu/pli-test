@@ -93,15 +93,6 @@ if test `echo "$BOXTYPE" | cut -b 1-2` == "vu"; then
 	AC_DEFINE(FORCE_ADVANCED_REMOTE, 1,[define to fixup the input device identification when the remote control is actually an 'advanced' remote (with play/forward/rewind keys)])
 fi
 
-if test "$BOXTYPE" == "cc1" -o "$BOXTYPE" == "sf8008" -o "$BOXTYPE" == "sf8008m" -o "$BOXTYPE" == "sf8008ta" -o "$BOXTYPE" == "ustym4kpro" -o "$BOXTYPE" == "gbmv200" -o "$BOXTYPE" == "beyonwizv2" -o "$BOXTYPE" == "viper4k" -o "$BOXTYPE" == "dagsmv200" -o "$BOXTYPE" == "dual"; then
-	AC_DEFINE(HAVE_HISILICON, 1,[define add HISILICON chip])
-	AC_DEFINE(CONFIG_HISILICON_FB, 1,[define add HISILICON framebuffer blit])
-fi
-
-if test "$BOXTYPE" == "dual"; then
-	AC_DEFINE(FORCE_ALPHABLENDING_ACCELERATION, 1,[define when the framebuffer acceleration has alphablending support, but detection slow down all])
-fi
-
 AC_ARG_WITH(libsdl,
 	AS_HELP_STRING([--with-libsdl],[use libsdl, yes or no]),
 	[with_libsdl=$withval],[with_libsdl=no])
@@ -109,6 +100,21 @@ if test "$with_libsdl" = "yes"; then
 	PKG_CHECK_MODULES(LIBSDL, sdl)
 fi
 AM_CONDITIONAL(HAVE_LIBSDL, test "$with_libsdl" = "yes")
+
+dnl ---------------------------------------------------------------------------
+dnl  --with-gles : ارسم واجهة enigma2 بـ OpenGL ES بدل المعالج (gGLDC بدل gFBDC)
+dnl ---------------------------------------------------------------------------
+AC_ARG_WITH(gles,
+	AS_HELP_STRING([--with-gles],[render the OSD with OpenGL ES 2.0 (gGLDC) instead of the CPU framebuffer, yes or no]),
+	[with_gles=$withval],[with_gles=no])
+if test "$with_gles" = "yes"; then
+	AC_CHECK_HEADERS([EGL/egl.h],,[AC_MSG_ERROR([Could not find EGL/egl.h - install the EGL headers])])
+	AC_CHECK_HEADERS([GLES2/gl2.h],,[AC_MSG_ERROR([Could not find GLES2/gl2.h - install the GLESv2 headers])])
+	GLES_LIBS="-lEGL -lGLESv2"
+	AC_DEFINE([ENABLE_GLES_DC],[1],[Define to 1 to render the OSD with OpenGL ES (gGLDC)])
+fi
+AC_SUBST(GLES_LIBS)
+AM_CONDITIONAL(HAVE_GLES, test "$with_gles" = "yes")
 
 AC_ARG_WITH(libxine,
 	AS_HELP_STRING([--with-libxine],[use libxine, yes or no]),
@@ -266,7 +272,7 @@ CXXFLAGS="$CXXFLAGS -Wall -Wextra -Werror \
 	-Wunsafe-loop-optimizations -Wpointer-arith \
 	-Wfloat-equal -Wlogical-op \
 	-Wno-error=cast-align=strict -Wno-error=ignored-qualifiers \
-	-Wno-error=cast-function-type \
+	-Wno-error=cast-function-type -Wno-error=deprecated-declarations \
 	-Wno-error=stringop-truncation -Wno-error=shadow -Wno-error=cast-qual \
 	-Wno-error=aggregate-return -Wno-error=missing-field-initializers \
 	-Wno-error=packed -Wno-error=vla -Wno-error=clobbered -Wno-error=unused-parameter \
